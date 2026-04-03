@@ -8,8 +8,13 @@ from datetime import date, time, timedelta, datetime
 import json
 from werkzeug.security import generate_password_hash
 from functools import wraps
+from dotenv import load_dotenv
+import os
+load_dotenv()
 app = Flask(__name__)
-app.config.from_object(Config)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+
+db = SQLAlchemy(app)
 db.init_app(app)
 
 login_manager = LoginManager()
