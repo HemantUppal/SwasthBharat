@@ -199,6 +199,147 @@ body::before{content:'';position:fixed;top:-120px;right:-120px;width:500px;heigh
 ::-webkit-scrollbar-thumb{background:var(--bg2);border-radius:4px;}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(45,106,79,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.6s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+
+  body {
+    flex-direction: column;
+  }
+
+  /* SIDEBAR → make it top navbar */
+  .sidebar {
+    position: fixed;
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px;
+    z-index: 200;
+  }
+
+  .logo {
+    padding: 10px;
+    border: none;
+  }
+
+  .patient-card {
+    display: none; /* hide on mobile */
+  }
+
+  .nav {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding: 0;
+  }
+
+  .nav-item {
+    white-space: nowrap;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .nav-section-label {
+    display: none;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  /* MAIN */
+  .main {
+    margin-left: 0;
+    margin-top: 70px;
+  }
+
+  .topbar {
+    padding: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .topbar-title {
+    font-size: 18px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  /* STATS → stack */
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  /* TWO COLUMN → stack */
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  /* PROFILE GRID */
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* SLOT GRID */
+  .slot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* INFO ROW */
+  .info-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* DEPARTMENT GRID */
+  .dept-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* DOCTOR CARD */
+  .dc-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dc-actions {
+    flex-direction: column;
+  }
+
+  /* APPOINTMENTS */
+  .appt-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .appt-date-block {
+    margin-bottom: 8px;
+  }
+
+  /* MODAL */
+  .modal {
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
+}
 </style>
 </head>
 <body>
