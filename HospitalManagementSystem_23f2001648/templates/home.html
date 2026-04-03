@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SwasthBharat  — Book Your Appointment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --deep: #0b1a2e;
+      --navy: #112240;
+      --teal: #0d9488;
+      --teal-light: #14b8a6;
+      --gold: #f0a500;
+      --cream: #faf7f2;
+      --white: #ffffff;
+      --gray: #8b9ab0;
+      --light-bg: #f0f6ff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--deep);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 5%;
+      background: rgba(11, 26, 46, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 700;
+      color: var(--white);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--teal);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 1rem;
+    }
+
+    .logo span { color: var(--teal-light); }
+
+    nav .cta-nav {
+      display: flex; gap: 0.75rem;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+      padding: 0.6rem 1.4rem;
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: all 0.25s ease;
+      text-decoration: none;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid rgba(255,255,255,0.25);
+      color: var(--white);
+    }
+    .btn-outline:hover { border-color: var(--teal-light); color: var(--teal-light); }
+
+    .btn-solid {
+      background: var(--teal);
+      color: var(--white);
+    }
+    .btn-solid:hover { background: var(--teal-light); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(13,148,136,0.4); }
+
+    .btn-gold {
+      background: var(--gold);
+      color: var(--deep);
+    }
+    .btn-gold:hover { background: #f5b420; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,165,0,0.4); }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding: 120px 5% 80px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 70% 40%, rgba(13,148,136,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 80% at 20% 80%, rgba(240,165,0,0.06) 0%, transparent 60%),
+                  linear-gradient(160deg, #0b1a2e 0%, #0d2040 100%);
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    .hero-content {
+      position: relative; z-index: 2;
+      max-width: 680px;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 1rem;
+      background: rgba(13,148,136,0.15);
+      border: 1px solid rgba(13,148,136,0.3);
+      border-radius: 50px;
+      font-size: 0.8rem; font-weight: 500;
+      color: var(--teal-light);
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px;
+      background: var(--teal-light);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(20,184,166,0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(20,184,166,0); }
+    }
+
+    .hero h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 900;
+      line-height: 1.08;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      color: var(--teal-light);
+    }
+
+    .hero p {
+      font-size: 1.1rem; font-weight: 300;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.65);
+      max-width: 520px;
+      margin-bottom: 2.5rem;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .hero-actions .btn { font-size: 0.95rem; padding: 0.85rem 2rem; }
+
+    .hero-visual {
+      position: absolute; right: 5%; top: 50%;
+      transform: translateY(-50%);
+      width: min(420px, 40vw);
+      animation: fadeUp 0.8s 0.2s ease both;
+      display: none;
+    }
+    @media(min-width: 1000px) { .hero-visual { display: block; } }
+
+    .hero-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 2rem;
+    }
+
+    .doctor-avatar-row {
+      display: flex; gap: -8px; margin-bottom: 1.5rem;
+    }
+
+    .avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--deep);
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      display: grid; place-items: center;
+      font-size: 1.2rem;
+      margin-left: -8px;
+    }
+    .avatar:first-child { margin-left: 0; }
+
+    .hero-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .hero-card p { font-size: 0.85rem; color: var(--gray); }
+
+    .mini-stat-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin-top: 1.5rem;
+    }
+
+    .mini-stat {
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 0.9rem 1rem;
+    }
+
+    .mini-stat .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700;
+      color: var(--teal-light);
+    }
+
+    .mini-stat .lbl {
+      font-size: 0.75rem; color: var(--gray);
+      margin-top: 0.15rem;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      position: relative; z-index: 2;
+      background: rgba(255,255,255,0.03);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 2.5rem 5%;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 2rem;
+    }
+
+    .stat-item { text-align: center; }
+
+    .stat-item .value {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem; font-weight: 900;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .stat-item .value span { color: var(--gold); }
+
+    .stat-item .label {
+      font-size: 0.8rem; font-weight: 500;
+      color: var(--gray);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-top: 0.4rem;
+    }
+
+    /* ── SECTIONS COMMON ── */
+    section { position: relative; z-index: 2; padding: 80px 5%; }
+
+    .section-tag {
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.15em;
+      color: var(--teal-light);
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 900;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      font-size: 1rem; color: var(--gray);
+      max-width: 560px; line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+
+    /* ── ACHIEVEMENTS ── */
+    .achievements { background: linear-gradient(180deg, var(--deep) 0%, #0d2040 100%); }
+
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .achievement-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 1.75rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .achievement-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--teal), var(--gold));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+
+    .achievement-card:hover { background: rgba(255,255,255,0.07); transform: translateY(-4px); }
+    .achievement-card:hover::before { transform: scaleX(1); }
+
+    .ach-icon {
+      width: 52px; height: 52px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 1.5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .ach-icon.teal { background: rgba(13,148,136,0.2); }
+    .ach-icon.gold { background: rgba(240,165,0,0.15); }
+    .ach-icon.blue { background: rgba(59,130,246,0.15); }
+    .ach-icon.rose { background: rgba(244,63,94,0.15); }
+
+    .achievement-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .achievement-card p { font-size: 0.88rem; color: var(--gray); line-height: 1.65; }
+
+    .ach-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem; font-weight: 900;
+      color: var(--teal-light);
+      margin-top: 1rem;
+    }
+
+    /* ── DEPARTMENTS ── */
+    .departments { background: #0d2040; }
+
+    .dept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .dept-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 1.5rem 1.25rem;
+      text-align: center;
+      transition: all 0.25s ease;
+      cursor: default;
+    }
+
+    .dept-card:hover {
+      background: rgba(13,148,136,0.12);
+      border-color: rgba(13,148,136,0.4);
+      transform: translateY(-2px);
+    }
+
+    .dept-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+
+    .dept-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+
+    .dept-card p { font-size: 0.78rem; color: var(--gray); }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials { background: var(--deep); }
+
+    .testi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .testi-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 18px;
+      padding: 1.75rem;
+      transition: transform 0.3s ease;
+    }
+
+    .testi-card:hover { transform: translateY(-3px); }
+
+    .stars { color: var(--gold); font-size: 1rem; margin-bottom: 1rem; letter-spacing: 2px; }
+
+    .testi-card blockquote {
+      font-size: 0.92rem; color: rgba(255,255,255,0.8);
+      line-height: 1.75; font-style: italic;
+      margin-bottom: 1.25rem;
+    }
+
+    .testi-author { display: flex; align-items: center; gap: 0.75rem; }
+
+    .testi-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      display: grid; place-items: center;
+      font-size: 1rem;
+    }
+
+    .testi-author strong { font-size: 0.9rem; display: block; }
+    .testi-author span { font-size: 0.78rem; color: var(--gray); }
+
+    /* ── ACCESS PORTAL ── */
+    .portal {
+      background: linear-gradient(135deg, #0d2040 0%, #0b1a2e 100%);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .portal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media(max-width: 700px) { .portal-grid { grid-template-columns: 1fr; } }
+
+    .portal-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 22px;
+      padding: 2.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .portal-card:hover {
+      background: rgba(255,255,255,0.07);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+
+    .portal-card .portal-icon {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      display: grid; place-items: center;
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .portal-card.patient .portal-icon { background: rgba(13,148,136,0.2); }
+    .portal-card.doctor .portal-icon { background: rgba(240,165,0,0.15); }
+
+    .portal-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem; font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .portal-card p {
+      font-size: 0.9rem; color: var(--gray);
+      line-height: 1.65; margin-bottom: 1.75rem;
+    }
+
+    .portal-btn-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+    .portal-btn-group .btn { font-size: 0.9rem; }
+
+    .feature-list { list-style: none; margin-bottom: 1.75rem; }
+
+    .feature-list li {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.85rem; color: rgba(255,255,255,0.7);
+      padding: 0.3rem 0;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: rgba(13,148,136,0.2);
+      color: var(--teal-light);
+      font-size: 0.7rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 2;
+      background: #070f1c;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 3rem 5%;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    footer .logo { font-size: 1.2rem; }
+
+    footer p { font-size: 0.8rem; color: var(--gray); }
+
+    footer .footer-links { display: flex; gap: 1.5rem; }
+    footer .footer-links a { font-size: 0.82rem; color: var(--gray); text-decoration: none; transition: color 0.2s; }
+    footer .footer-links a:hover { color: var(--teal-light); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .animate.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      margin: 0 5%;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width: 640px) {
+      nav .cta-nav { display: none; }
+      .hero-actions .btn { width: 100%; }
+      .portal-btn-group { flex-direction: column; }
+      .portal-btn-group .btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <div class="logo-icon">⚕</div>
+    Swasth<span>Bharat</span>
+  </a>
+  <div class="cta-nav">
+    <a href="#portal" class="btn btn-outline">Login</a>
+    <a href="#portal" class="btn btn-solid">Book Appointment</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <div class="pulse-dot"></div>
+      Trusted Healthcare Since 1992
+    </div>
+    <h1>World-Class Care,<br><em>Whenever You Need It</em></h1>
+    <p>Book appointments with India's top specialists in minutes. From primary care to complex surgeries, Swasth Bharat delivers exceptional healthcare outcomes with compassion and precision.</p>
+    <div class="hero-actions">
+      <a href="/patient_register" class="btn btn-solid">Book an Appointment →</a>
+      <a href="#achievements" class="btn btn-outline">Our Achievements</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="hero-card">
+      <div class="doctor-avatar-row">
+        <div class="avatar">👨‍⚕️</div>
+        <div class="avatar">👩‍⚕️</div>
+        <div class="avatar">👨‍⚕️</div>
+        <div class="avatar">👩‍⚕️</div>
+        <div class="avatar" style="background:rgba(13,148,136,0.3); font-size:0.75rem; font-weight:700; color:var(--teal-light);">+84</div>
+      </div>
+      <h3>95+ Specialist Doctors</h3>
+      <p>Across 18 departments — all verified, experienced, and ready.</p>
+      <div class="mini-stat-row">
+        <div class="mini-stat">
+          <div class="num">4.9★</div>
+          <div class="lbl">Patient Rating</div>
+        </div>
+        <div class="mini-stat">
+          <div class="num">24/7</div>
+          <div class="lbl">Emergency Care</div>
+        </div>
+        <div class="mini-stat">
+          <div class="num">3 min</div>
+          <div class="lbl">Avg. Response</div>
+        </div>
+        <div class="mini-stat">
+          <div class="num">ISO</div>
+          <div class="lbl">Certified 2024</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat-item animate">
+    <div class="value">2.4<span>M+</span></div>
+    <div class="label">Patients Treated</div>
+  </div>
+  <div class="stat-item animate">
+    <div class="value">95<span>+</span></div>
+    <div class="label">Specialist Doctors</div>
+  </div>
+  <div class="stat-item animate">
+    <div class="value">32<span>+</span></div>
+    <div class="label">Years of Excellence</div>
+  </div>
+  <div class="stat-item animate">
+    <div class="value">18<span></div>
+    <div class="label">Departments</div>
+  </div>
+  <div class="stat-item animate">
+    <div class="value">98<span>%</span></div>
+    <div class="label">Success Rate</div>
+  </div>
+  <div class="stat-item animate">
+    <div class="value">47<span>+</span></div>
+    <div class="label">Awards Won</div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENTS -->
+<section class="achievements" id="achievements">
+  <div class="section-tag">Our Legacy</div>
+  <h2 class="section-title">Milestones That<br>Define Excellence</h2>
+  <p class="section-sub">Decades of breakthroughs, global recognition, and unwavering commitment to advancing healthcare in India and beyond.</p>
+
+  <div class="achievements-grid">
+    <div class="achievement-card animate">
+      <div class="ach-icon gold">🏆</div>
+      <h3>National Healthcare Excellence Award</h3>
+      <p>Recipient of India's most prestigious healthcare honour for 5 consecutive years (2019–2024), recognising outstanding patient outcomes and innovation.</p>
+      <div class="ach-num">5×</div>
+    </div>
+    <div class="achievement-card animate">
+      <div class="ach-icon teal">🔬</div>
+      <h3>Pioneer in Robotic Surgery</h3>
+      <p>First hospital in the region to perform a fully robotic cardiac bypass procedure, with over 12,000 successful robotic surgeries to date.</p>
+      <div class="ach-num">12,000+</div>
+    </div>
+    <div class="achievement-card animate">
+      <div class="ach-icon blue">🌍</div>
+      <h3>JCI Accreditation</h3>
+      <p>Internationally accredited by Joint Commission International — a mark achieved by fewer than 2% of hospitals in South Asia.</p>
+      <div class="ach-num">Since 2010</div>
+    </div>
+    <div class="achievement-card animate">
+      <div class="ach-icon rose">❤️</div>
+      <h3>Cardiac Care Center of the Year</h3>
+      <p>Ranked #1 in Cardiac Care by HealthRankings India 2023, performing over 8,000 open-heart surgeries with a 99.2% survival rate.</p>
+      <div class="ach-num">99.2%</div>
+    </div>
+    <div class="achievement-card animate">
+      <div class="ach-icon gold">🎓</div>
+      <h3>Leading Medical Research Hub</h3>
+      <p>Published 340+ peer-reviewed research papers in international journals. Home to an active clinical trials unit with ongoing studies in oncology and neurology.</p>
+      <div class="ach-num">340+ Papers</div>
+    </div>
+    <div class="achievement-card animate">
+      <div class="ach-icon teal">🤝</div>
+      <h3>Community Health Initiative</h3>
+      <p>Delivered free healthcare to over 500,000 underserved patients through our annual rural health camps and telemedicine outreach programmes.</p>
+      <div class="ach-num">500K+ Served</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- DEPARTMENTS -->
+<section class="departments" id="departments">
+  <div class="section-tag">Specialties</div>
+  <h2 class="section-title">18 World-Class<br>Departments</h2>
+  <p class="section-sub">From preventive care to advanced interventions, our specialists cover every dimension of human health.</p>
+
+  <div class="dept-grid">
+    <div class="dept-card animate">
+      <div class="dept-icon">❤️</div>
+      <h4>Cardiology</h4>
+      <p>95+ procedures / month</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🧠</div>
+      <h4>Neurology</h4>
+      <p>Brain & spine specialists</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🦴</div>
+      <h4>Orthopaedics</h4>
+      <p>Joint & bone surgery</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🩺</div>
+      <h4>Oncology</h4>
+      <p>Advanced cancer care</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">👁️</div>
+      <h4>Ophthalmology</h4>
+      <p>Vision care & surgery</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🦷</div>
+      <h4>Dentistry</h4>
+      <p>Comprehensive dental</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🤱</div>
+      <h4>Obstetrics</h4>
+      <p>Mother & child care</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🫁</div>
+      <h4>Pulmonology</h4>
+      <p>Respiratory disorders</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🩸</div>
+      <h4>Haematology</h4>
+      <p>Blood disorders</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🦾</div>
+      <h4>Plastic Surgery</h4>
+      <p>Reconstructive & cosmetic</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🧬</div>
+      <h4>Genetics</h4>
+      <p>DNA diagnostics</p>
+    </div>
+    <div class="dept-card animate">
+      <div class="dept-icon">🏃</div>
+      <h4>Sports Medicine</h4>
+      <p>Athletic injury care</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials" id="testimonials">
+  <div class="section-tag">Patient Stories</div>
+  <h2 class="section-title">Lives Changed,<br>Families Reunited</h2>
+  <p class="section-sub">Over 2.4 million patients have trusted us with their health. Here's what some of them have to say.</p>
+
+  <div class="testi-grid">
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"After my triple bypass, the care I received was beyond exceptional. The team treated me like family. I'm back to hiking at 62 — something I never imagined possible."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">👨</div>
+        <div>
+          <strong>Rajesh Khanna</strong>
+          <span>Cardiac Patient · Delhi</span>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"The online booking system made everything so easy. I got an appointment with the neurology specialist within the hour, and my diagnosis was swift and accurate."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">👩</div>
+        <div>
+          <strong>Priya Mehta</strong>
+          <span>Neurology Patient · Mumbai</span>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"My daughter's leukaemia treatment here was world-class. The oncology team's dedication and the hospital's infrastructure gave us hope when we needed it most."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">👨‍👧</div>
+        <div>
+          <strong>Arun Sharma</strong>
+          <span>Oncology — Parent · Bangalore</span>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"Robotic knee replacement got me back on the cricket field in 8 weeks. The orthopaedics team here is simply the best in the country."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">🏏</div>
+        <div>
+          <strong>Vikram Singh</strong>
+          <span>Orthopaedics Patient · Chennai</span>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"I delivered my twins here and the maternity ward staff were incredibly attentive. Couldn't have asked for a safer, more nurturing environment for my babies' first moments."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">👩‍🍼</div>
+        <div>
+          <strong>Sneha Iyer</strong>
+          <span>Maternity Patient · Hyderabad</span>
+        </div>
+      </div>
+    </div>
+    <div class="testi-card animate">
+      <div class="stars">★★★★★</div>
+      <blockquote>"The teleconsultation service is a game changer. I consulted with a senior pulmonologist from my village 400 km away — saving me two days of travel and getting treated fast."</blockquote>
+      <div class="testi-author">
+        <div class="testi-avatar">🧑‍🌾</div>
+        <div>
+          <strong>Mohan Das</strong>
+          <span>Pulmonology Patient · Bihar</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ACCESS PORTAL -->
+<section class="portal" id="portal">
+  <div class="section-tag">Access Portal</div>
+  <h2 class="section-title">Your Gateway to<br>Healthcare Excellence</h2>
+  <p class="section-sub">Whether you're a patient seeking care or a medical professional managing appointments — your personalised portal awaits.</p>
+
+  <div class="portal-grid">
+    <!-- PATIENT CARD -->
+    <div class="portal-card patient animate">
+      <div class="portal-icon">🧑‍⚕️</div>
+      <h3>Patient Portal</h3>
+      <p>Book appointments, view your medical history, receive prescriptions, and consult with our specialists — all from one place.</p>
+      <ul class="feature-list">
+        <li>Instant appointment booking with any specialist</li>
+        <li>Digital prescriptions & health records</li>
+        <li>Video & in-person consultations</li>
+        <li>Lab results & diagnostic reports</li>
+        <li>Medication reminders & follow-up alerts</li>
+      </ul>
+      <div class="portal-btn-group">
+        <a href="/patientlogin" class="btn btn-solid">Login as Patient</a>
+        <a href="/patientregister" class="btn btn-outline">Register as Patient</a>
+      </div>
+    </div>
+
+    <!-- DOCTOR CARD -->
+    <div class="portal-card doctor animate">
+      <div class="portal-icon">👨‍⚕️</div>
+      <h3>Doctor Portal</h3>
+      <p>Manage your schedule, access patient records, issue e-prescriptions, and collaborate with colleagues across departments seamlessly.</p>
+      <ul class="feature-list">
+        <li>Smart schedule & calendar management</li>
+        <li>Full patient history at a glance</li>
+        <li>E-prescriptions & referral system</li>
+        <li>Inter-department collaboration tools</li>
+        <li>Performance analytics & reports</li>
+      </ul>
+      <div class="portal-btn-group">
+        <a href="/doctorlogin" class="btn btn-gold">Login as Doctor</a>
+        <a href="/doctorregister" class="btn btn-outline">Register as Doctor</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="logo">
+    <div class="logo-icon">SB</div>
+    Swasth <span>Bharat</span>
+  </a>
+  <p>© 2025 Swasth Bharat Hospital. All rights reserved. NABH & JCI Accredited.</p>
+  <div class="footer-links">
+    <a href="#">Privacy Policy</a>
+    <a href="#">Terms of Service</a>
+    <a href="#">Contact Us</a>
+    <a href="#">Emergency: 1800-XXX-XXXX</a>
+  </div>
+</footer>
+
+<script>
+  // Intersection Observer for scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, (Array.from(entry.target.parentElement?.children || []).indexOf(entry.target)) * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
+  // Counter animation
+  function animateCounter(el) {
+    const target = parseFloat(el.dataset.target);
+    const suffix = el.dataset.suffix || '';
+    const duration = 1800;
+    const start = performance.now();
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      el.textContent = (Number.isInteger(target) ? Math.floor(current) : current.toFixed(1)) + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('[data-target]').forEach(animateCounter);
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.stats-bar').forEach(el => statsObserver.observe(el));
+</script>
+</body>
+</html>

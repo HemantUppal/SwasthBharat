@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+<title>SwasthBharat — Control Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#080c14;
+  --surface:#0d1424;
+  --surface2:#111c30;
+  --surface3:#162038;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --gold:#f0b429;
+  --gold2:#ffd97d;
+  --teal:#00c2cb;
+  --red:#f25f5c;
+  --green:#06d6a0;
+  --blue:#4cc9f0;
+  --text:#eef2ff;
+  --text2:#a8b3cf;
+  --muted:#4a5568;
+  --serif:'Syne',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+}
+
+body{font-family:var(--serif);background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden;}
+
+/* grid overlay */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(240,180,41,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(240,180,41,0.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;
+}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:260px;min-height:100vh;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;z-index:100;
+}
+
+.logo{padding:30px 24px 22px;border-bottom:1px solid var(--border);}
+.logo-mark{font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--text);}
+.logo-mark span{color:var(--gold);}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px;font-family:var(--mono);}
+
+.admin-badge{
+  margin:16px;background:linear-gradient(135deg,rgba(240,180,41,0.12),rgba(240,180,41,0.04));
+  border:1px solid rgba(240,180,41,0.2);border-radius:14px;padding:14px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.admin-dot{width:36px;height:36px;border-radius:10px;background:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#000;flex-shrink:0;}
+.admin-name{font-size:13px;font-weight:700;color:var(--gold);}
+.admin-role{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-family:var(--mono);}
+
+.nav{flex:1;padding:8px 12px;}
+.nav-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:14px 12px 6px;font-family:var(--mono);}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-radius:10px;cursor:pointer;
+  font-size:13px;font-weight:600;color:var(--text2);
+  transition:all 0.18s;margin-bottom:2px;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(240,180,41,0.1);color:var(--gold);border:1px solid rgba(240,180,41,0.2);}
+.nav-icon{width:16px;height:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+.logout-link{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.15s;}
+.logout-link:hover{background:rgba(242,95,92,0.1);color:var(--red);}
+
+/* ── MAIN ── */
+.main{margin-left:260px;flex:1;min-height:100vh;display:flex;flex-direction:column;position:relative;z-index:1;}
+
+/* ── TOPBAR ── */
+.topbar{
+  padding:20px 36px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,12,20,0.9);backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:50;
+}
+.topbar-title{font-size:24px;font-weight:800;letter-spacing:-0.5px;}
+.topbar-sub{font-size:11px;color:var(--muted);margin-top:3px;font-family:var(--mono);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+
+.search-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:9px 14px;width:260px;
+  transition:border-color 0.15s;
+}
+.search-wrap:focus-within{border-color:var(--gold);}
+.search-wrap input{background:transparent;border:none;outline:none;font-family:var(--serif);font-size:13px;color:var(--text);width:100%;}
+.search-wrap input::placeholder{color:var(--muted);}
+
+/* ── CONTENT ── */
+.content{padding:32px 36px;flex:1;}
+.panel{display:none;animation:fadeIn 0.3s ease;}
+.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:22px;position:relative;overflow:hidden;
+  transition:transform 0.15s,border-color 0.15s;
+}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc-gold::after{background:linear-gradient(90deg,var(--gold),transparent);}
+.sc-teal::after{background:linear-gradient(90deg,var(--teal),transparent);}
+.sc-blue::after{background:linear-gradient(90deg,var(--blue),transparent);}
+.sc-green::after{background:linear-gradient(90deg,var(--green),transparent);}
+.stat-icon{font-size:22px;margin-bottom:12px;}
+.stat-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:8px;}
+.stat-value{font-size:38px;font-weight:800;line-height:1;}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono);}
+.sc-gold .stat-value{color:var(--gold);}
+.sc-teal .stat-value{color:var(--teal);}
+.sc-blue .stat-value{color:var(--blue);}
+.sc-green .stat-value{color:var(--green);}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px;}
+.card-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;letter-spacing:0.3px;}
+.badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;font-family:var(--mono);}
+.badge-gold{background:rgba(240,180,41,0.15);color:var(--gold);}
+.badge-teal{background:rgba(0,194,203,0.15);color:var(--teal);}
+.badge-red{background:rgba(242,95,92,0.15);color:var(--red);}
+.badge-blue{background:rgba(76,201,240,0.15);color:var(--blue);}
+.badge-green{background:rgba(6,214,160,0.15);color:var(--green);}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+th{padding:12px 22px;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);text-align:left;font-family:var(--mono);border-bottom:1px solid var(--border);font-weight:500;}
+td{padding:14px 22px;font-size:13px;border-bottom:1px solid var(--border);font-weight:500;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+
+/* ── STATUS PILL ── */
+.pill{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:700;font-family:var(--mono);}
+.pill-scheduled{background:rgba(76,201,240,0.15);color:var(--blue);}
+.pill-completed{background:rgba(6,214,160,0.15);color:var(--green);}
+.pill-cancelled{background:rgba(242,95,92,0.15);color:var(--red);}
+.pill-active{background:rgba(6,214,160,0.15);color:var(--green);}
+.pill-blacklisted{background:rgba(242,95,92,0.15);color:var(--red);}
+
+/* ── BUTTONS ── */
+.btn{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;font-family:var(--serif);cursor:pointer;border:none;transition:all 0.15s;letter-spacing:0.3px;}
+.btn-gold{background:var(--gold);color:#000;}
+.btn-gold:hover{background:var(--gold2);}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+.btn-red{background:rgba(242,95,92,0.15);color:var(--red);border:1px solid rgba(242,95,92,0.2);}
+.btn-red:hover{background:rgba(242,95,92,0.3);}
+.btn-teal{background:rgba(0,194,203,0.15);color:var(--teal);border:1px solid rgba(0,194,203,0.2);}
+.btn-teal:hover{background:rgba(0,194,203,0.3);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:22px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);}
+.form-input,.form-select{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:10px;padding:11px 14px;color:var(--text);
+  font-family:var(--serif);font-size:13px;outline:none;
+  transition:border-color 0.15s;font-weight:500;
+}
+.form-input:focus,.form-select:focus{border-color:var(--gold);}
+.form-select option{background:var(--surface2);}
+.form-actions{display:flex;gap:10px;justify-content:flex-end;padding:0 22px 22px;}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:20px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:slideUp 0.25s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.modal-header{padding:24px 28px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1;border-radius:20px 20px 0 0;}
+.modal-title{font-size:20px;font-weight:800;letter-spacing:-0.3px;}
+.modal-close{width:32px;height:32px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);transition:all 0.15s;}
+.modal-close:hover{color:var(--red);}
+.modal-body{padding:22px 28px 28px;}
+
+/* ── DETAIL CARD ── */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.detail-item .dl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:var(--mono);margin-bottom:4px;}
+.detail-item .dv{font-size:14px;font-weight:600;}
+
+/* ── SEARCH RESULT ── */
+.search-result-item{
+  padding:14px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;cursor:pointer;transition:background 0.15s;
+}
+.search-result-item:hover{background:var(--surface2);}
+.search-result-item:last-child{border-bottom:none;}
+.sr-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex-shrink:0;}
+.sr-name{font-size:14px;font-weight:700;}
+.sr-meta{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);}
+
+/* ── TOAST ── */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;box-shadow:0 8px 40px rgba(0,0,0,0.5);animation:toastIn 0.25s ease;}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.toast-dot{width:8px;height:8px;border-radius:50%;}
+.toast-success .toast-dot{background:var(--green);}
+.toast-info .toast-dot{background:var(--gold);}
+.toast-error .toast-dot{background:var(--red);}
+
+.empty-row td{text-align:center;color:var(--muted);padding:36px;font-family:var(--mono);font-size:12px;}
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
+
+/* ── CONFIRM BOX ── */
+.confirm-box{background:rgba(242,95,92,0.08);border:1px solid rgba(242,95,92,0.2);border-radius:12px;padding:16px 18px;margin-bottom:16px;font-size:13px;color:var(--red);font-weight:600;}
+</style>
+</head>
+<body>
+
+{#  MACROS — defined before use  #}
+
+{%- macro stat_card(cls, icon, label, value, sub) %}
+<div class="stat-card {{ cls }}">
+  <div class="stat-icon">{{ icon }}</div>
+  <div class="stat-label">{{ label }}</div>
+  <div class="stat-value">{{ value }}</div>
+  <div class="stat-sub">{{ sub }}</div>
+</div>
+{%- endmacro %}
+
+{%- macro appt_row(a) %}
+<tr id="appt-tr-{{ a.id }}">
+  <td><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">#{{ a.id }}</span></td>
+  <td><span style="font-weight:700">{{ a.patient.user.name }}</span></td>
+  <td> {{ a.doctor.user.name }}<br><span style="font-size:11px;color:var(--muted)">{{ a.doctor.specialization }}</span></td>
+  <td style="font-family:var(--mono);font-size:12px">{{ a.date.strftime('%d %b %Y') }}</td>
+  <td style="font-family:var(--mono);font-size:12px">{{ a.time.strftime('%I:%M %p') }}</td>
+  <td><span class="pill pill-{{ a.status }}">{{ a.status }}</span></td>
+</tr>
+{%- endmacro %}
+
+{%- macro doctor_row(d, idx) %}
+{%- set nm = d.user.name %}
+{%- set init = (nm.split()[0][0] + (nm.split()[-1][0] if nm.split()|length > 1 else '')) | upper %}
+{%- set is_bl = d.user.is_blacklisted if d.user.is_blacklisted is defined else false %}
+<tr id="doc-tr-{{ d.id }}">
+  <td>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:9px;background:rgba(240,180,41,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">{{ init }}</div>
+      <div>
+        <div style="font-weight:700"> {{ nm }}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">{{ d.license }}</div>
+      </div>
+    </div>
+  </td>
+  <td>{{ d.specialization }}</td>
+  <td style="font-family:var(--mono);font-size:12px">{{ d.experience }} yrs</td>
+  <td style="font-size:12px;color:var(--muted)">{{ d.user.email }}</td>
+  <td><span class="pill {% if is_bl %}pill-blacklisted{% else %}pill-active{% endif %}">{% if is_bl %}blacklisted{% else %}active{% endif %}</span></td>
+  <td>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-teal btn-sm" onclick="openEditDoctor({{ d.id }})">Edit</button>
+      <button class="btn btn-red btn-sm" onclick="openBlacklist('doctor',{{ d.id }},'{{ nm }}')">{% if is_bl %}Unban{% else %}Blacklist{% endif %}</button>
+    </div>
+  </td>
+</tr>
+{%- endmacro %}
+
+{%- macro patient_row(p, idx) %}
+{%- set nm = p.user.name %}
+{%- set init = (nm.split()[0][0] + (nm.split()[-1][0] if nm.split()|length > 1 else '')) | upper %}
+{%- set is_bl = p.user.is_blacklisted if p.user.is_blacklisted is defined else false %}
+<tr id="pat-tr-{{ p.id }}">
+  <td>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:9px;background:rgba(0,194,203,0.15);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">{{ init }}</div>
+      <div>
+        <div style="font-weight:700">{{ nm }}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">{{ p.user.email }}</div>
+      </div>
+    </div>
+  </td>
+  <td style="font-family:var(--mono);font-size:12px">{{ p.age }} · {{ p.gender }}</td>
+  <td style="font-size:12px;color:var(--muted)">{{ p.user.phone or '—' }}</td>
+  <td style="font-size:12px;color:var(--muted)">{{ p.user.address[:28] }}{% if p.user.address|length > 28 %}…{% endif %}</td>
+  <td><span class="pill {% if is_bl %}pill-blacklisted{% else %}pill-active{% endif %}">{% if is_bl %}blacklisted{% else %}active{% endif %}</span></td>
+  <td>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-teal btn-sm" onclick="openEditPatient({{ p.id }})">Edit</button>
+      <button class="btn btn-red btn-sm" onclick="openBlacklist('patient',{{ p.id }},'{{ nm }}')">{% if is_bl %}Unban{% else %}Blacklist{% endif %}</button>
+    </div>
+  </td>
+</tr>
+{%- endmacro %}
+
+
+<!--  SIDEBAR  -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Swasth<span>Bharat</span></div>
+    <div class="logo-sub">Admin Control Panel</div>
+  </div>
+
+  <div class="admin-badge">
+    <div class="admin-dot">A</div>
+    <div>
+      <div class="admin-name">{{ admin.name }}</div>
+      <div class="admin-role">Super Admin</div>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" onclick="showPanel('overview')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      Dashboard
+    </div>
+
+    <div class="nav-label">Management</div>
+    <div class="nav-item" onclick="showPanel('doctors')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      Doctors
+    </div>
+    <div class="nav-item" onclick="showPanel('patients')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></span>
+      Patients
+    </div>
+    <div class="nav-item" onclick="showPanel('appointments')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      Appointments
+    </div>
+
+    <div class="nav-label">Actions</div>
+    <div class="nav-item" onclick="showPanel('add-doctor')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
+      Add Doctor
+    </div>
+    <div class="nav-item" onclick="showPanel('search')">
+      <span class="nav-icon"><svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      Search
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('home') }}" class="logout-link">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out
+    </a>
+  </div>
+</aside>
+
+
+<!--  MAIN  -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="topbar-date"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-wrap">
+        <svg width="13" height="13" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="global-search" placeholder="Search doctors, patients…" oninput="liveSearch(this.value)">
+      </div>
+      <button class="btn btn-gold" onclick="showPanel('add-doctor')">+ Add Doctor</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW  -->
+    <div class="panel active" id="panel-overview">
+
+      <div class="stats-row">
+        {{ stat_card('sc-gold', '👨‍⚕️', 'Total Doctors', total_doctors, active_doctors ~ ' active') }}
+        {{ stat_card('sc-teal', '🧑‍🤝‍🧑', 'Total Patients', total_patients, active_patients ~ ' active') }}
+        {{ stat_card('sc-blue', '📅', 'Total Appointments', total_appointments, scheduled_appointments ~ ' scheduled') }}
+        {{ stat_card('sc-green', '✅', 'Completed', completed_appointments, cancelled_appointments ~ ' cancelled') }}
+      </div>
+
+      <div class="two-col">
+        <!-- Recent Appointments -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              Recent Appointments
+            </div>
+            <span class="badge badge-blue">Last 5</span>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody>
+                {%- if recent_appointments %}
+                  {%- for a in recent_appointments %}
+                  <tr>
+                    <td><span style="font-family:var(--mono);font-size:11px;color:var(--muted)">#{{ a.id }}</span></td>
+                    <td style="font-weight:700">{{ a.patient.user.name }}</td>
+                    <td style="font-size:12px;color:var(--text2)"> {{ a.doctor.user.name }}</td>
+                    <td style="font-family:var(--mono);font-size:12px">{{ a.date.strftime('%d %b') }}</td>
+                    <td><span class="pill pill-{{ a.status }}">{{ a.status }}</span></td>
+                  </tr>
+                  {%- endfor %}
+                {%- else %}
+                  <tr class="empty-row"><td colspan="5">No appointments yet</td></tr>
+                {%- endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Recent Registrations -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Recent Registrations
+            </div>
+            <span class="badge badge-gold">Last 5</span>
+          </div>
+          <div>
+            {%- for u in recent_users %}
+            {%- set init = (u.name.split()[0][0] + (u.name.split()[-1][0] if u.name.split()|length > 1 else '')) | upper %}
+            <div style="padding:13px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+              <div style="width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0;background:{% if u.role=='doctor' %}rgba(240,180,41,0.15);color:var(--gold){% else %}rgba(0,194,203,0.15);color:var(--teal){% endif %}">{{ init }}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:700">{{ u.name }}</div>
+                <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">{{ u.role | upper }} · {{ u.email }}</div>
+              </div>
+            </div>
+            {%- else %}
+            <div style="padding:36px;text-align:center;color:var(--muted);font-size:12px;font-family:var(--mono)">No recent registrations</div>
+            {%- endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  DOCTORS  -->
+    <div class="panel" id="panel-doctors">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            All Doctors
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="text" class="form-input" id="doc-filter" placeholder="Filter doctors…" oninput="filterTable('doc-tbody',this.value,[0,1,2])" style="width:180px;padding:7px 12px;font-size:12px">
+            <span class="badge badge-gold">{{ doctors | length }} total</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Doctor</th><th>Specialization</th><th>Exp</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="doc-tbody">
+              {%- if doctors %}
+                {%- for d in doctors %}{{ doctor_row(d, loop.index) }}{%- endfor %}
+              {%- else %}
+                <tr class="empty-row"><td colspan="6">No doctors registered yet.</td></tr>
+              {%- endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  PATIENTS  -->
+    <div class="panel" id="panel-patients">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            All Patients
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <input type="text" class="form-input" id="pat-filter" placeholder="Filter patients…" oninput="filterTable('pat-tbody',this.value,[0,1,2])" style="width:180px;padding:7px 12px;font-size:12px">
+            <span class="badge badge-teal">{{ patients | length }} total</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Patient</th><th>Age · Gender</th><th>Phone</th><th>Address</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="pat-tbody">
+              {%- if patients %}
+                {%- for p in patients %}{{ patient_row(p, loop.index) }}{%- endfor %}
+              {%- else %}
+                <tr class="empty-row"><td colspan="6">No patients registered yet.</td></tr>
+              {%- endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  APPOINTMENTS  -->
+    <div class="panel" id="panel-appointments">
+      <!-- filter tabs -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-gold btn-sm" onclick="filterAppts('all',this)">All</button>
+        <button class="btn btn-outline btn-sm" onclick="filterAppts('scheduled',this)">Scheduled</button>
+        <button class="btn btn-outline btn-sm" onclick="filterAppts('completed',this)">Completed</button>
+        <button class="btn btn-outline btn-sm" onclick="filterAppts('cancelled',this)">Cancelled</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            All Appointments
+          </div>
+          <span class="badge badge-blue">{{ all_appointments | length }} total</span>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Patient</th><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr></thead>
+            <tbody id="appt-tbody">
+              {%- if all_appointments %}
+                {%- for a in all_appointments %}{{ appt_row(a) }}{%- endfor %}
+              {%- else %}
+                <tr class="empty-row"><td colspan="6">No appointments found.</td></tr>
+              {%- endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  ADD DOCTOR  -->
+    <div class="panel" id="panel-add-doctor">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add New Doctor
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-input" id="add-name" placeholder=" Full Name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="add-email" placeholder="doctor@hospital.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" class="form-input" id="add-password" placeholder="Temporary password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="tel" class="form-input" id="add-phone" placeholder="+91-9XXXXXXXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specialization</label>
+            <select class="form-select" id="add-spec">
+              <option value="">— Select —</option>
+              {%- for s in specializations %}
+              <option value="{{ s }}">{{ s }}</option>
+              {%- endfor %}
+              <option value="__other__">Other (type below)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Custom Specialization</label>
+            <input type="text" class="form-input" id="add-spec-custom" placeholder="Leave blank if selected above">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Experience (years)</label>
+            <input type="number" class="form-input" id="add-exp" placeholder="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label">License No.</label>
+            <input type="text" class="form-input" id="add-license" placeholder="MCI-XXXX">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">Address</label>
+            <input type="text" class="form-input" id="add-address" placeholder="Clinic / Hospital address">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Pincode</label>
+            <input type="text" class="form-input" id="add-pincode" placeholder="110001">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="clearAddDoctor()">Clear</button>
+          <button class="btn btn-gold" id="add-doc-btn" onclick="submitAddDoctor()">Add Doctor</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  SEARCH  -->
+    <div class="panel" id="panel-search">
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center">
+        <div class="search-wrap" style="width:100%;max-width:440px">
+          <svg width="13" height="13" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="search-input" placeholder="Search by name, email, specialization…" oninput="performSearch(this.value)">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm active-filter" id="filter-all" onclick="setSearchFilter('all',this)">All</button>
+          <button class="btn btn-outline btn-sm" id="filter-doctors" onclick="setSearchFilter('doctor',this)">Doctors</button>
+          <button class="btn btn-outline btn-sm" id="filter-patients" onclick="setSearchFilter('patient',this)">Patients</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Search Results</div>
+          <span class="badge badge-gold" id="search-count">—</span>
+        </div>
+        <div id="search-results">
+          <div style="padding:48px;text-align:center;color:var(--muted);font-size:13px;font-family:var(--mono)">
+            Start typing to search…
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+
+<!--  MODALS  -->
+
+<!-- Edit Doctor Modal -->
+<div class="modal-overlay" id="edit-doc-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Doctor</div>
+      <div class="modal-close" onclick="closeModal('edit-doc-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-doc-id">
+      <div class="form-grid" style="padding:0">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="edit-doc-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="edit-doc-email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" class="form-input" id="edit-doc-phone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Specialization</label>
+          <input type="text" class="form-input" id="edit-doc-spec">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Experience (years)</label>
+          <input type="number" class="form-input" id="edit-doc-exp">
+        </div>
+        <div class="form-group">
+          <label class="form-label">License No.</label>
+          <input type="text" class="form-input" id="edit-doc-license">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Address</label>
+          <input type="text" class="form-input" id="edit-doc-address">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pincode</label>
+          <input type="text" class="form-input" id="edit-doc-pincode">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('edit-doc-modal')">Cancel</button>
+        <button class="btn btn-gold" id="save-doc-btn" onclick="saveEditDoctor()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Patient Modal -->
+<div class="modal-overlay" id="edit-pat-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Patient</div>
+      <div class="modal-close" onclick="closeModal('edit-pat-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-pat-id">
+      <div class="form-grid" style="padding:0">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" class="form-input" id="edit-pat-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="edit-pat-email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone</label>
+          <input type="tel" class="form-input" id="edit-pat-phone">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input type="number" class="form-input" id="edit-pat-age">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <select class="form-select" id="edit-pat-gender">
+            <option>Male</option><option>Female</option><option>Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pincode</label>
+          <input type="text" class="form-input" id="edit-pat-pincode">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">Address</label>
+          <input type="text" class="form-input" id="edit-pat-address">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
+        <button class="btn btn-outline" onclick="closeModal('edit-pat-modal')">Cancel</button>
+        <button class="btn btn-gold" id="save-pat-btn" onclick="saveEditPatient()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Blacklist Confirm Modal -->
+<div class="modal-overlay" id="blacklist-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="bl-modal-title">Confirm Action</div>
+      <div class="modal-close" onclick="closeModal('blacklist-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-box" id="bl-confirm-text"></div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:20px">This will prevent the user from logging in. You can reverse this action at any time.</p>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="closeModal('blacklist-modal')">Cancel</button>
+        <button class="btn btn-red" id="bl-confirm-btn" onclick="confirmBlacklist()">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+// ── Server data ────────────────────────────────────────────
+const DOCTORS  = {{ doctors_json  | safe }};
+const PATIENTS = {{ patients_json | safe }};
+
+// ── Topbar date ────────────────────────────────────────────
+const now = new Date();
+document.getElementById('topbar-date').textContent =
+  now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── Panel navigation ───────────────────────────────────────
+const PANEL_TITLES = {
+  overview:'Dashboard', doctors:'Manage Doctors', patients:'Manage Patients',
+  appointments:'All Appointments', 'add-doctor':'Add New Doctor', search:'Search'
+};
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.getAttribute('onclick')?.includes(`'${name}'`)) item.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = PANEL_TITLES[name] || name;
+}
+
+// ── Live global search (topbar) → jumps to search panel ───
+function liveSearch(val) {
+  if (!val.trim()) return;
+  showPanel('search');
+  document.getElementById('search-input').value = val;
+  performSearch(val);
+}
+
+// ── Table row filter ───────────────────────────────────────
+function filterTable(tbodyId, val, colIdxs) {
+  const q = val.toLowerCase();
+  document.querySelectorAll(`#${tbodyId} tr`).forEach(tr => {
+    const text = colIdxs.map(i => tr.cells[i]?.textContent || '').join(' ').toLowerCase();
+    tr.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
+}
+
+// ── Appointment status filter ──────────────────────────────
+function filterAppts(status, btn) {
+  document.querySelectorAll('#panel-appointments .btn').forEach(b => {
+    b.className = 'btn btn-outline btn-sm';
+  });
+  btn.className = 'btn btn-gold btn-sm';
+
+  document.querySelectorAll('#appt-tbody tr').forEach(tr => {
+    if (status === 'all') { tr.style.display = ''; return; }
+    const pill = tr.querySelector('.pill');
+    tr.style.display = pill?.textContent.trim() === status ? '' : 'none';
+  });
+}
+
+// ── Search panel ───────────────────────────────────────────
+let searchFilter = 'all';
+
+function setSearchFilter(f, btn) {
+  searchFilter = f;
+  document.querySelectorAll('#panel-search .btn').forEach(b => {
+    b.className = 'btn btn-outline btn-sm';
+  });
+  btn.className = 'btn btn-gold btn-sm';
+  performSearch(document.getElementById('search-input').value);
+}
+
+function performSearch(val) {
+  const q   = val.toLowerCase().trim();
+  const cnt = document.getElementById('search-count');
+  const el  = document.getElementById('search-results');
+
+  if (!q) {
+    cnt.textContent = '—';
+    el.innerHTML = `<div style="padding:48px;text-align:center;color:var(--muted);font-size:13px;font-family:var(--mono)">Start typing to search…</div>`;
+    return;
+  }
+
+  let results = [];
+
+  if (searchFilter !== 'patient') {
+    DOCTORS.filter(d =>
+      d.name.toLowerCase().includes(q) ||
+      d.specialization.toLowerCase().includes(q) ||
+      d.email.toLowerCase().includes(q) ||
+      d.license.toLowerCase().includes(q)
+    ).forEach(d => results.push({ type: 'doctor', data: d }));
+  }
+
+  if (searchFilter !== 'doctor') {
+    PATIENTS.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q) ||
+      (p.contact_info||'').toLowerCase().includes(q)
+    ).forEach(p => results.push({ type: 'patient', data: p }));
+  }
+
+  cnt.textContent = results.length + ' results';
+
+  if (!results.length) {
+    el.innerHTML = `<div style="padding:48px;text-align:center;color:var(--muted);font-size:13px;font-family:var(--mono)">No results for "${val}"</div>`;
+    return;
+  }
+
+  el.innerHTML = results.map(r => {
+    const d = r.data;
+    const isDoc = r.type === 'doctor';
+    const init = (d.name.split(' ')[0][0] + (d.name.split(' ').slice(-1)[0]?.[0] || '')).toUpperCase();
+    const bgColor = isDoc ? 'rgba(240,180,41,0.15)' : 'rgba(0,194,203,0.15)';
+    const txtColor = isDoc ? 'var(--gold)' : 'var(--teal)';
+    const meta = isDoc
+      ? `Doctor · ${d.specialization} · ${d.experience} yrs · ${d.license}`
+      : `Patient · Age ${d.age} · ${d.gender} · ${d.email}`;
+    const editFn = isDoc ? `openEditDoctor(${d.id})` : `openEditPatient(${d.id})`;
+    const blFn   = `openBlacklist('${r.type}',${d.id},'${d.name.replace(/'/g,"\\'")}')`;
+    return `
+      <div class="search-result-item">
+        <div class="sr-avatar" style="background:${bgColor};color:${txtColor};border-radius:10px">${init}</div>
+        <div style="flex:1">
+          <div class="sr-name">${isDoc?' ':''}${d.name}</div>
+          <div class="sr-meta">${meta}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-teal btn-sm" onclick="${editFn}">Edit</button>
+          <button class="btn btn-red btn-sm" onclick="${blFn}">Blacklist</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Add Doctor ─────────────────────────────────────────────
+async function submitAddDoctor() {
+  const spec = document.getElementById('add-spec').value;
+  const customSpec = document.getElementById('add-spec-custom').value.trim();
+  const finalSpec = spec === '__other__' ? customSpec : spec;
+
+  const payload = {
+    name:           document.getElementById('add-name').value.trim(),
+    email:          document.getElementById('add-email').value.trim(),
+    password:       document.getElementById('add-password').value,
+    phone:          document.getElementById('add-phone').value.trim(),
+    specialization: finalSpec,
+    experience:     document.getElementById('add-exp').value,
+    license:        document.getElementById('add-license').value.trim(),
+    address:        document.getElementById('add-address').value.trim(),
+    pincode:        document.getElementById('add-pincode').value.trim(),
+  };
+
+  if (!payload.name || !payload.email || !payload.password || !payload.specialization || !payload.license) {
+    showToast('Name, email, password, specialization and license are required.', 'error'); return;
+  }
+
+  const btn = document.getElementById('add-doc-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Adding…`;
+
+  try {
+    const res  = await fetch('/admin/doctor/add', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(` ${payload.name} added successfully ✓`, 'success');
+      clearAddDoctor();
+      // Inject into DOCTORS array and table
+      DOCTORS.push(data.doctor);
+      injectDoctorRow(data.doctor);
+    } else {
+      showToast(data.message || 'Failed to add doctor.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Add Doctor'; }
+}
+
+function clearAddDoctor() {
+  ['add-name','add-email','add-password','add-phone','add-spec-custom','add-exp','add-license','add-address','add-pincode']
+    .forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('add-spec').value = '';
+}
+
+function injectDoctorRow(d) {
+  const tbody = document.getElementById('doc-tbody');
+  const emptyRow = tbody.querySelector('.empty-row');
+  if (emptyRow) emptyRow.remove();
+  const init = (d.name.split(' ')[0][0] + (d.name.split(' ').slice(-1)[0]?.[0] || '')).toUpperCase();
+  const tr = document.createElement('tr');
+  tr.id = `doc-tr-${d.id}`;
+  tr.innerHTML = `
+    <td>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:rgba(240,180,41,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${init}</div>
+        <div>
+          <div style="font-weight:700"> ${d.name}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${d.license}</div>
+        </div>
+      </div>
+    </td>
+    <td>${d.specialization}</td>
+    <td style="font-family:var(--mono);font-size:12px">${d.experience} yrs</td>
+    <td style="font-size:12px;color:var(--text2)">${d.email}</td>
+    <td><span class="pill pill-active">active</span></td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-teal btn-sm" onclick="openEditDoctor(${d.id})">Edit</button>
+        <button class="btn btn-red btn-sm" onclick="openBlacklist('doctor',${d.id},'${d.name}')">Blacklist</button>
+      </div>
+    </td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+// ── Edit Doctor Modal ──────────────────────────────────────
+function openEditDoctor(docId) {
+  const d = DOCTORS.find(d => d.id === docId);
+  if (!d) return;
+  document.getElementById('edit-doc-id').value      = d.id;
+  document.getElementById('edit-doc-name').value    = d.name;
+  document.getElementById('edit-doc-email').value   = d.email;
+  document.getElementById('edit-doc-phone').value   = d.phone || '';
+  document.getElementById('edit-doc-spec').value    = d.specialization;
+  document.getElementById('edit-doc-exp').value     = d.experience;
+  document.getElementById('edit-doc-license').value = d.license;
+  document.getElementById('edit-doc-address').value = d.address || '';
+  document.getElementById('edit-doc-pincode').value = d.pincode || '';
+  openModal('edit-doc-modal');
+}
+
+async function saveEditDoctor() {
+  const id = document.getElementById('edit-doc-id').value;
+  const payload = {
+    doctor_id:      id,
+    name:           document.getElementById('edit-doc-name').value.trim(),
+    email:          document.getElementById('edit-doc-email').value.trim(),
+    phone:          document.getElementById('edit-doc-phone').value.trim(),
+    specialization: document.getElementById('edit-doc-spec').value.trim(),
+    experience:     document.getElementById('edit-doc-exp').value,
+    license:        document.getElementById('edit-doc-license').value.trim(),
+    address:        document.getElementById('edit-doc-address').value.trim(),
+    pincode:        document.getElementById('edit-doc-pincode').value.trim(),
+  };
+  const btn = document.getElementById('save-doc-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+
+  try {
+    const res  = await fetch('/admin/doctor/edit', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Update local array
+      const d = DOCTORS.find(d => d.id == id);
+      if (d) Object.assign(d, payload);
+      // Update table row
+      updateDoctorRow(data.doctor);
+      closeModal('edit-doc-modal');
+      showToast('Doctor updated ✓', 'success');
+    } else { showToast(data.message||'Update failed.','error'); }
+  } catch { showToast('Network error.','error'); }
+  finally { btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+function updateDoctorRow(d) {
+  const tr = document.getElementById(`doc-tr-${d.id}`);
+  if (!tr) return;
+  const init = (d.name.split(' ')[0][0] + (d.name.split(' ').slice(-1)[0]?.[0]||'')).toUpperCase();
+  tr.cells[0].innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:9px;background:rgba(240,180,41,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${init}</div>
+      <div><div style="font-weight:700"> ${d.name}</div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${d.license}</div></div>
+    </div>`;
+  tr.cells[1].textContent = d.specialization;
+  tr.cells[2].textContent = d.experience + ' yrs';
+  tr.cells[3].textContent = d.email;
+}
+
+// ── Edit Patient Modal ─────────────────────────────────────
+function openEditPatient(patId) {
+  const p = PATIENTS.find(p => p.id === patId);
+  if (!p) return;
+  document.getElementById('edit-pat-id').value      = p.id;
+  document.getElementById('edit-pat-name').value    = p.name;
+  document.getElementById('edit-pat-email').value   = p.email;
+  document.getElementById('edit-pat-phone').value   = p.phone || '';
+  document.getElementById('edit-pat-age').value     = p.age;
+  document.getElementById('edit-pat-gender').value  = p.gender;
+  document.getElementById('edit-pat-pincode').value = p.pincode || '';
+  document.getElementById('edit-pat-address').value = p.address || '';
+  openModal('edit-pat-modal');
+}
+
+async function saveEditPatient() {
+  const id = document.getElementById('edit-pat-id').value;
+  const payload = {
+    patient_id: id,
+    name:       document.getElementById('edit-pat-name').value.trim(),
+    email:      document.getElementById('edit-pat-email').value.trim(),
+    phone:      document.getElementById('edit-pat-phone').value.trim(),
+    age:        document.getElementById('edit-pat-age').value,
+    gender:     document.getElementById('edit-pat-gender').value,
+    pincode:    document.getElementById('edit-pat-pincode').value.trim(),
+    address:    document.getElementById('edit-pat-address').value.trim(),
+  };
+  const btn = document.getElementById('save-pat-btn');
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span>`;
+
+  try {
+    const res  = await fetch('/admin/patient/edit', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      const p = PATIENTS.find(p => p.id == id);
+      if (p) Object.assign(p, payload);
+      updatePatientRow(data.patient);
+      closeModal('edit-pat-modal');
+      showToast('Patient updated ✓', 'success');
+    } else { showToast(data.message||'Update failed.','error'); }
+  } catch { showToast('Network error.','error'); }
+  finally { btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+function updatePatientRow(p) {
+  const tr = document.getElementById(`pat-tr-${p.id}`);
+  if (!tr) return;
+  const init = (p.name.split(' ')[0][0] + (p.name.split(' ').slice(-1)[0]?.[0]||'')).toUpperCase();
+  tr.cells[0].innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:9px;background:rgba(0,194,203,0.15);color:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0">${init}</div>
+      <div><div style="font-weight:700">${p.name}</div><div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${p.email}</div></div>
+    </div>`;
+  tr.cells[1].textContent = `${p.age} · ${p.gender}`;
+  tr.cells[2].textContent = p.phone || '—';
+}
+
+// ── Blacklist / Unban ──────────────────────────────────────
+let _blTarget = null;
+
+function openBlacklist(type, id, name) {
+  _blTarget = { type, id, name };
+  document.getElementById('bl-modal-title').textContent = 'Confirm Blacklist';
+  document.getElementById('bl-confirm-text').textContent =
+    `You are about to blacklist ${type === 'doctor' ? ' ' : ''}${name}. They will lose system access immediately.`;
+  document.getElementById('bl-confirm-btn').textContent = 'Blacklist';
+  openModal('blacklist-modal');
+}
+
+async function confirmBlacklist() {
+  if (!_blTarget) return;
+  const btn = document.getElementById('bl-confirm-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+
+  try {
+    const res  = await fetch('/admin/user/blacklist', {
+      method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({ type: _blTarget.type, id: _blTarget.id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Update pill in table row
+      const rowId = _blTarget.type === 'doctor' ? `doc-tr-${_blTarget.id}` : `pat-tr-${_blTarget.id}`;
+      const row   = document.getElementById(rowId);
+      if (row) {
+        const pill = row.querySelector('.pill');
+        if (pill) { pill.className='pill pill-blacklisted'; pill.textContent='blacklisted'; }
+        const blBtn = row.querySelector('.btn-red');
+        if (blBtn) blBtn.textContent = 'Unban';
+      }
+      closeModal('blacklist-modal');
+      showToast(`${_blTarget.name} has been blacklisted.`, 'info');
+      _blTarget = null;
+    } else { showToast(data.message||'Action failed.','error'); }
+  } catch { showToast('Network error.','error'); }
+  finally { btn.disabled=false; btn.textContent='Confirm'; }
+}
+
+// ── Modal helpers ──────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+['edit-doc-modal','edit-pat-modal','blacklist-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) closeModal(id);
+  });
+});
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<div class="toast-dot"></div>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3400);
+}
+</script>
+</body>
+</html>

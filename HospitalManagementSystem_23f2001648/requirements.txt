@@ -1,0 +1,8 @@
+flaskflask
+mysql.connector
+gunicorn
+flask_sqlalchemy
+flask_login
+sqlalchemy
+flask-bcrypt==1.0.1
+flask-jwt-extended==4.6.0

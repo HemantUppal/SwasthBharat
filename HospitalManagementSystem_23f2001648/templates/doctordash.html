@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() if csrf_token is defined else '' }}">
+<title>SwasthBharat— Dr. {{ doctor.name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1e2d45;
+    --border: rgba(255,255,255,0.07);
+    --accent: #3b9eff;
+    --accent2: #00e5c3;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 240px;
+    min-height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+
+  .logo { padding: 28px 24px 20px; border-bottom: 1px solid var(--border); }
+  .logo-mark { font-family: var(--serif); font-size: 22px; letter-spacing: -0.5px; color: var(--text); }
+  .logo-mark span { color: var(--accent); }
+  .logo-sub { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+
+  .nav { flex: 1; padding: 16px 12px; }
+  .nav-section-label { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); padding: 12px 12px 6px; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    cursor: pointer; font-size: 14px; font-weight: 500;
+    color: var(--muted); transition: all 0.18s ease; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(59,158,255,0.15), rgba(0,229,195,0.08));
+    color: var(--accent); border: 1px solid rgba(59,158,255,0.2);
+  }
+  .nav-icon { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .doc-info { padding: 16px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .doc-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 15px; color: white; flex-shrink: 0;
+  }
+  .doc-name { font-size: 13px; font-weight: 600; }
+  .doc-role { font-size: 11px; color: var(--muted); }
+
+  .logout-link {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; color: var(--muted); font-size: 13px;
+    font-weight: 500; cursor: pointer; text-decoration: none;
+    transition: color 0.15s; border-top: 1px solid var(--border);
+  }
+  .logout-link:hover { color: var(--accent3); }
+
+  /* ── Main ── */
+  .main { margin-left: 240px; flex: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Topbar ── */
+  .topbar {
+    padding: 20px 36px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-title { font-family: var(--serif); font-size: 26px; }
+  .topbar-date { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .view-toggle { display: flex; background: var(--surface2); border-radius: 10px; padding: 3px; border: 1px solid var(--border); }
+  .view-btn { padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--muted); transition: all 0.15s; font-weight: 500; }
+  .view-btn.active { background: var(--accent); color: white; }
+  .notif-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative; color: var(--muted); transition: color 0.15s;
+  }
+  .notif-btn:hover { color: var(--text); }
+  .notif-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); border: 1.5px solid var(--surface); }
+
+  /* ── Content ── */
+  .content { padding: 32px 36px; flex: 1; }
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* ── Stats Row ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .stat-card.blue::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-card.green::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .stat-card.red::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .stat-card.yellow::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+  .stat-label { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; margin-bottom: 8px; text-transform: uppercase; }
+  .stat-value { font-family: var(--serif); font-size: 34px; line-height: 1; }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .stat-card.blue .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--accent2); }
+  .stat-card.red .stat-value { color: var(--accent3); }
+  .stat-card.yellow .stat-value { color: var(--accent4); }
+
+  /* ── Layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+  .full-section { margin-bottom: 24px; }
+
+  /* ── Section Card ── */
+  .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+  .section-header { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .section-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .section-badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+  .badge-blue { background: rgba(59,158,255,0.15); color: var(--accent); }
+  .badge-green { background: rgba(0,229,195,0.15); color: var(--accent2); }
+  .badge-red { background: rgba(255,107,107,0.15); color: var(--accent3); }
+  .badge-yellow { background: rgba(255,209,102,0.15); color: var(--accent4); }
+
+  /* ── Appointment Items ── */
+  .appt-item { padding: 16px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 14px; transition: background 0.15s; }
+  .appt-item:last-child { border-bottom: none; }
+  .appt-item:hover { background: var(--surface2); }
+  .time-block { text-align: center; min-width: 54px; background: var(--surface2); border-radius: 10px; padding: 8px 6px; }
+  .time-main { font-size: 15px; font-weight: 700; color: var(--accent); }
+  .time-period { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .appt-info { flex: 1; }
+  .appt-patient { font-size: 14px; font-weight: 600; }
+  .appt-detail { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .status-pill { font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .status-scheduled { background: rgba(59,158,255,0.15); color: var(--accent); }
+  .status-completed { background: rgba(0,229,195,0.15); color: var(--accent2); }
+  .status-cancelled { background: rgba(255,107,107,0.15); color: var(--accent3); }
+  .appt-actions { display: flex; gap: 6px; }
+  .action-btn { padding: 5px 10px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+  .btn-complete { background: rgba(0,229,195,0.12); color: var(--accent2); border-color: rgba(0,229,195,0.2); }
+  .btn-complete:hover { background: rgba(0,229,195,0.25); }
+  .btn-cancel-appt { background: rgba(255,107,107,0.12); color: var(--accent3); border-color: rgba(255,107,107,0.2); }
+  .btn-cancel-appt:hover { background: rgba(255,107,107,0.25); }
+
+  /* ── Patient List ── */
+  .patient-item { padding: 14px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: background 0.15s; }
+  .patient-item:last-child { border-bottom: none; }
+  .patient-item:hover { background: var(--surface2); }
+  .patient-avatar { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; font-family: var(--serif); }
+  .avatar-a { background: rgba(59,158,255,0.2); color: var(--accent); }
+  .avatar-b { background: rgba(0,229,195,0.2); color: var(--accent2); }
+  .avatar-c { background: rgba(255,209,102,0.2); color: var(--accent4); }
+  .avatar-d { background: rgba(255,107,107,0.2); color: var(--accent3); }
+  .patient-name { font-size: 14px; font-weight: 600; }
+  .patient-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .chevron { color: var(--muted); margin-left: auto; }
+
+  /* ── Week Calendar ── */
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding: 20px; }
+  .day-header { text-align: center; margin-bottom: 8px; }
+  .day-name { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .day-num { font-family: var(--serif); font-size: 20px; margin-top: 2px; }
+  .day-num.today { color: var(--accent); position: relative; }
+  .day-num.today::after { content: ''; display: block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); margin: 3px auto 0; }
+  .day-slots { display: flex; flex-direction: column; gap: 4px; }
+  .slot { border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; text-align: center; border: 1px solid transparent; position: relative; }
+  .slot-available { background: rgba(0,229,195,0.1); color: var(--accent2); border-color: rgba(0,229,195,0.2); }
+  .slot-booked { background: rgba(59,158,255,0.1); color: var(--accent); border-color: rgba(59,158,255,0.2); }
+  .slot-empty { background: var(--surface2); color: var(--muted); border-color: var(--border); }
+  .slot-add { background: transparent; color: var(--muted); border: 1px dashed var(--border); text-align: center; cursor: pointer; }
+  .slot-add:hover { border-color: var(--accent2); color: var(--accent2); }
+  .slot-del { position: absolute; top: 2px; right: 4px; font-size: 10px; opacity: 0.6; cursor: pointer; }
+  .slot-del:hover { opacity: 1; }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 660px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+  .modal-header { padding: 24px 28px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--surface); z-index: 1; }
+  .modal-title { font-family: var(--serif); font-size: 22px; }
+  .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); transition: color 0.15s; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 24px 28px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .info-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+  .info-value { font-size: 15px; font-weight: 500; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* ── Forms ── */
+  .form-group { margin-bottom: 18px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+  .form-input, .form-textarea, .form-select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; color: var(--text); font-family: var(--sans); font-size: 14px; outline: none; transition: border-color 0.15s; }
+  .form-input:focus, .form-textarea:focus, .form-select:focus { border-color: var(--accent); }
+  .form-textarea { resize: vertical; min-height: 80px; }
+  .form-select option { background: var(--surface2); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #0070cc); color: white; border: none; border-radius: 10px; padding: 11px 22px; font-size: 14px; font-weight: 600; font-family: var(--sans); cursor: pointer; transition: opacity 0.15s; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 11px 22px; font-size: 14px; font-weight: 600; font-family: var(--sans); cursor: pointer; }
+  .btn-secondary:hover { background: var(--surface3); }
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+  /* ── Avail add box ── */
+  .avail-add-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+
+  /* ── History ── */
+  .history-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+  .history-date { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+  .history-diagnosis { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .history-detail { font-size: 13px; color: var(--muted); }
+
+  /* ── Toast ── */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: toastIn 0.25s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .toast-success .toast-dot { background: var(--accent2); }
+  .toast-info    .toast-dot { background: var(--accent); }
+  .toast-error   .toast-dot { background: var(--accent3); }
+
+  .empty-state { padding: 30px; text-align: center; color: var(--muted); font-size: 13px; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+</style>
+</head>
+<body>
+{# ════ MACROS — must be defined before use ════ #}
+
+{%- macro appt_row(appt) %}
+{%- set t = appt.time.strftime('%I:%M') %}
+{%- set p_name = appt.patient.user.name %}
+<div class="appt-item" id="appt-row-{{ appt.id }}">
+  <div class="time-block">
+    <div class="time-main">{{ t }}</div>
+    <div class="time-period">{{ appt.time.strftime('%p') }}</div>
+  </div>
+  <div class="appt-info">
+    <div class="appt-patient">{{ p_name }}</div>
+    <div class="appt-detail">{{ appt.date.strftime('%a, %d %b %Y') }}</div>
+  </div>
+  <span class="status-pill status-{{ appt.status }}" id="status-{{ appt.id }}">{{ appt.status }}</span>
+  {%- if appt.status == 'scheduled' %}
+  <div class="appt-actions" id="actions-{{ appt.id }}">
+    <button class="action-btn btn-complete"    onclick="updateAppt({{ appt.id }},'completed')">✓ Done</button>
+    <button class="action-btn btn-cancel-appt" onclick="updateAppt({{ appt.id }},'cancelled')">✕ Cancel</button>
+  </div>
+  {%- endif %}
+</div>
+{%- endmacro %}
+
+{%- macro patient_row(p, idx) %}
+{%- set av_classes = ['avatar-a','avatar-b','avatar-c','avatar-d'] %}
+{%- set avc = av_classes[(idx - 1) % 4] %}
+{%- set nm = p.user.name %}
+{%- set init = (nm.split()[0][0] + (nm.split()[-1][0] if nm.split()|length > 1 else '')) | upper %}
+<div class="patient-item" onclick="openPatientModal({{ p.id }})">
+  <div class="patient-avatar {{ avc }}">{{ init }}</div>
+  <div>
+    <div class="patient-name">{{ nm }}</div>
+    <div class="patient-meta">Age {{ p.age }} · {{ p.gender }} · {{ p.contact_info }}</div>
+  </div>
+  <svg class="chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+</div>
+{%- endmacro %}
+{# ── derive initials & profile once ── #}
+{% set dp = doctor.doctor_profile %}
+{% set nparts = doctor.name.split() %}
+{% set initials = (nparts[0][0] + (nparts[-1][0] if nparts|length > 1 else '')) | upper %}
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Swasth<span>Bharat</span></div>
+    <div class="logo-sub">Doctor Dashboard</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPanel('appointments')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+      Appointments
+    </div>
+    <div class="nav-item" onclick="showPanel('patients')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      Patients
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Schedule</div>
+    <div class="nav-item" onclick="showPanel('availability')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+      My Availability
+    </div>
+
+    <div class="nav-section-label" style="margin-top:8px">Records</div>
+    <div class="nav-item" onclick="showPanel('history')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+      Treatment History
+    </div>
+  </nav>
+
+  <a href="{{ url_for('home') }}" class="logout-link">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </a>
+
+  <div class="doc-info">
+    <div class="doc-avatar">{{ initials }}</div>
+    <div>
+      <div class="doc-name">{{ doctor.name }}</div>
+      <div class="doc-role">{{ dp.specialization if dp else 'Doctor' }} · #{{ dp.license if dp else '—' }}</div>
+    </div>
+  </div>
+</aside>
+
+
+<!-- ════ MAIN ════ -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Good day, {{ doctor.name.split()[1] }} 👋</div>
+      <div class="topbar-date" id="topbar-date"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="view-toggle">
+        <div class="view-btn active" onclick="setView('day',this)">Today</div>
+        <div class="view-btn" onclick="setView('week',this)">Week</div>
+      </div>
+      <div class="notif-btn">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-row">
+        <div class="stat-card blue">
+          <div class="stat-label">Today's Appointments</div>
+          <div class="stat-value" id="stat-today">{{ today_count }}</div>
+          <div class="stat-sub">
+            {{ completed_today }} completed · {{ scheduled_today }} remaining
+          </div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">This Week</div>
+          <div class="stat-value">{{ week_count }}</div>
+          <div class="stat-sub">Total appointments</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Cancelled</div>
+          <div class="stat-value">{{ cancelled_week }}</div>
+          <div class="stat-sub">This week</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Open Slots</div>
+          <div class="stat-value">{{ open_slots }}</div>
+          <div class="stat-sub">Next 7 days</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Today's Appointments -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <span id="dash-appt-title">Today's Appointments</span>
+            </div>
+            <span class="section-badge badge-blue" id="dash-appt-badge">{{ today_count }}</span>
+          </div>
+          <div id="dashboard-appt-list">
+            {%- if today_appointments %}
+              {%- for appt in today_appointments %}{{ appt_row(appt) }}{%- endfor %}
+            {%- else %}
+              <div class="empty-state">No appointments today.</div>
+            {%- endif %}
+          </div>
+        </div>
+
+        <!-- Recent Patients -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Recent Patients
+            </div>
+            <span class="section-badge badge-green">{{ patients | length }} assigned</span>
+          </div>
+          {%- for p in patients[:5] %}{{ patient_row(p, loop.index) }}{%- endfor %}
+          {%- if not patients %}
+          <div class="empty-state">No patients yet.</div>{%- endif %}
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ════ APPOINTMENTS ════ -->
+    <div class="panel" id="panel-appointments">
+      <div class="full-section section-card">
+        <div class="section-header">
+          <div class="section-title">All Appointments</div>
+          <span class="section-badge badge-blue">{{ all_appointments | length }} total</span>
+        </div>
+        <div id="full-appt-list">
+          {%- if all_appointments %}
+            {%- for appt in all_appointments %}{{ appt_row(appt) }}{%- endfor %}
+          {%- else %}
+            <div class="empty-state">No appointments found.</div>
+          {%- endif %}
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ════ PATIENTS ════ -->
+    <div class="panel" id="panel-patients">
+      <div class="full-section section-card">
+        <div class="section-header">
+          <div class="section-title">My Patients</div>
+          <span class="section-badge badge-green">{{ patients | length }} assigned</span>
+        </div>
+        {%- if patients %}
+          {%- for p in patients %}{{ patient_row(p, loop.index) }}{%- endfor %}
+        {%- else %}
+          <div class="empty-state">No patients assigned yet.</div>
+        {%- endif %}
+      </div>
+    </div>
+
+
+    <!-- ════ AVAILABILITY ════ -->
+    <div class="panel" id="panel-availability">
+      <div class="full-section section-card">
+        <div class="section-header">
+          <div class="section-title">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Weekly Availability — Next 7 Days
+          </div>
+        </div>
+        <div class="week-grid" id="week-grid"></div>
+      </div>
+
+      <div class="section-card" style="margin-top:20px">
+        <div class="section-header">
+          <div class="section-title">Add Availability Slot</div>
+        </div>
+        <div style="padding:22px">
+          <div class="avail-add-box">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end">
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-input" id="avail-date">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">Start Time</label>
+                <input type="time" class="form-input" id="avail-start">
+              </div>
+              <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">End Time</label>
+                <input type="time" class="form-input" id="avail-end">
+              </div>
+            </div>
+            <div style="margin-top:14px;display:flex;justify-content:flex-end">
+              <button class="btn-primary" id="add-avail-btn" onclick="addAvailability()">+ Add Slot</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ════ TREATMENT HISTORY ════ -->
+    <div class="panel" id="panel-history">
+      <div class="two-col">
+
+        <!-- Form -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">Update Treatment Record</div>
+          </div>
+          <div style="padding:22px">
+            <div class="form-group">
+              <label class="form-label">Patient</label>
+              <select class="form-select" id="tx-patient" onchange="loadPatientAppts()">
+                <option value="">— Select patient —</option>
+                {%- for p in patients %}
+                <option value="{{ p.id }}">{{ p.user.name }}</option>
+                {%- endfor %}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Appointment</label>
+              <select class="form-select" id="tx-appointment">
+                <option value="">— Select appointment —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Diagnosis</label>
+              <input type="text" class="form-input" id="tx-diagnosis" placeholder="e.g. Hypertension Stage 2">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Treatment Plan</label>
+              <textarea class="form-textarea" id="tx-treatment" placeholder="Describe the recommended treatment..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Prescriptions</label>
+              <textarea class="form-textarea" id="tx-rx" placeholder="e.g. Lisinopril 10mg once daily..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Notes</label>
+              <textarea class="form-textarea" id="tx-notes" placeholder="Any additional notes..." style="min-height:60px"></textarea>
+            </div>
+            <div class="btn-row" style="margin-top:0">
+              <button class="btn-secondary" onclick="clearTxForm()">Clear</button>
+              <button class="btn-primary" id="save-tx-btn" onclick="saveTreatment()">Save Record</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Records list -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">Recent Records</div>
+            <span class="section-badge badge-blue" id="history-count">{{ treatment_records | length }} entries</span>
+          </div>
+          <div style="padding:16px" id="history-list">
+            {%- if treatment_records %}
+              {%- for r in treatment_records %}
+              <div class="history-item" id="tx-{{ r.id }}">
+                <div class="history-date">{{ r.appointment.date.strftime('%d %b %Y') }} · {{ r.appointment.patient.user.name }}</div>
+                <div class="history-diagnosis">{{ r.diagnosis }}</div>
+                {%- if r.treatment %}<div class="history-detail" style="margin-top:4px">Treatment: {{ r.treatment }}</div>{%- endif %}
+                {%- if r.prescription %}<div class="history-detail">Rx: {{ r.prescription }}</div>{%- endif %}
+                {%- if r.notes %}<div class="history-detail" style="color:var(--muted);font-size:11px;margin-top:4px">{{ r.notes }}</div>{%- endif %}
+              </div>
+              {%- endfor %}
+            {%- else %}
+              <div class="empty-state" id="tx-empty">No treatment records yet.</div>
+            {%- endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+
+<!-- PATIENT MODAL -->
+<div class="modal-overlay" id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-patient-name">Patient Details</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="info-grid" id="modal-info-grid"></div>
+      <hr class="divider">
+      <div style="font-size:15px;font-weight:600;margin-bottom:14px">Appointment History</div>
+      <div id="modal-appt-list"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+
+{#  JINJA2 MACROS  #}
+
+{%- macro appt_row(appt) %}
+{%- set t = appt.time.strftime('%I:%M') %}
+{%- set p_name = appt.patient.user.name %}
+<div class="appt-item" id="appt-row-{{ appt.id }}">
+  <div class="time-block">
+    <div class="time-main">{{ t }}</div>
+    <div class="time-period">{{ appt.time.strftime('%p') }}</div>
+  </div>
+  <div class="appt-info">
+    <div class="appt-patient">{{ p_name }}</div>
+    <div class="appt-detail">{{ appt.date.strftime('%a, %d %b %Y') }}</div>
+  </div>
+  <span class="status-pill status-{{ appt.status }}" id="status-{{ appt.id }}">{{ appt.status }}</span>
+  {%- if appt.status == 'scheduled' %}
+  <div class="appt-actions" id="actions-{{ appt.id }}">
+    <button class="action-btn btn-complete"    onclick="updateAppt({{ appt.id }},'completed')">✓ Done</button>
+    <button class="action-btn btn-cancel-appt" onclick="updateAppt({{ appt.id }},'cancelled')">✕ Cancel</button>
+  </div>
+  {%- endif %}
+</div>
+{%- endmacro %}
+
+{%- macro patient_row(p, idx) %}
+{%- set av_classes = ['avatar-a','avatar-b','avatar-c','avatar-d'] %}
+{%- set avc = av_classes[(idx - 1) % 4] %}
+{%- set nm = p.user.name %}
+{%- set init = (nm.split()[0][0] + (nm.split()[-1][0] if nm.split()|length > 1 else '')) | upper %}
+<div class="patient-item" onclick="openPatientModal({{ p.id }})">
+  <div class="patient-avatar {{ avc }}">{{ init }}</div>
+  <div>
+    <div class="patient-name">{{ nm }}</div>
+    <div class="patient-meta">Age {{ p.age }} · {{ p.gender }} · {{ p.contact_info }}</div>
+  </div>
+  <svg class="chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+</div>
+{%- endmacro %}
+
+
+<script>
+// ── Server data injected as JSON 
+const CSRF  = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+const SERVER = {
+  updateApptUrl:    '/doctor/appointment/update',
+  addAvailUrl:      '/doctor/availability/add',
+  deleteAvailUrl:   '/doctor/availability/delete',
+  saveTreatmentUrl: '/doctor/treatment/save',
+  patientApptsBase: '/doctor/patient/',          // + id + /appointments
+
+
+  appointments: {{ appointments_json | safe }},
+  // Availability slots for week grid
+  availability:  {{ availability_json | safe }},
+  // Patients list for treatment select
+  patients:      {{ patients_json | safe }},
+};
+
+const todayDate = new Date();
+const todayStr  = todayDate.toISOString().split('T')[0];
+
+// ── Topbar ──────────────────────
+document.getElementById('topbar-date').textContent =
+  todayDate.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── Panel nav ───────────────────
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.getAttribute('onclick')?.includes(`'${name}'`)) item.classList.add('active');
+  });
+  if (name === 'availability') renderWeekGrid();
+}
+
+// ── View toggle (Today / Week) ──
+let currentView = 'day';
+
+function setView(v, el) {
+  currentView = v;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderDashAppts();
+}
+
+// ── Helpers ─────────────────────
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function statusCls(s) {
+  return s==='completed'?'status-completed':s==='cancelled'?'status-cancelled':'status-scheduled';
+}
+function addDays(n) {
+  const d = new Date(todayDate); d.setDate(d.getDate()+n);
+  return d.toISOString().split('T')[0];
+}
+
+// ── Appointment row HTML (for JS-rendered sections) ────────
+function apptRowHTML(a) {
+  const timeParts = fmt12(a.time).split(' ');
+  const actions = a.status === 'scheduled'
+    ? `<div class="appt-actions" id="actions-${a.id}">
+         <button class="action-btn btn-complete"    onclick="updateAppt(${a.id},'completed')">✓ Done</button>
+         <button class="action-btn btn-cancel-appt" onclick="updateAppt(${a.id},'cancelled')">✕ Cancel</button>
+       </div>` : '';
+  return `
+    <div class="appt-item" id="appt-row-${a.id}">
+      <div class="time-block">
+        <div class="time-main">${timeParts[0]}</div>
+        <div class="time-period">${timeParts[1]||''}</div>
+      </div>
+      <div class="appt-info">
+        <div class="appt-patient">${a.patient_name}</div>
+        <div class="appt-detail">${a.date}</div>
+      </div>
+      <span class="status-pill ${statusCls(a.status)}" id="status-${a.id}">${a.status}</span>
+      ${actions}
+    </div>`;
+}
+
+// ── Dashboard appointment list (today / week) ──────────────
+function renderDashAppts() {
+  const filtered = SERVER.appointments.filter(a => {
+    if (currentView === 'day') return a.date === todayStr;
+    const diff = (new Date(a.date) - todayDate) / 86400000;
+    return diff >= -1 && diff < 7;
+  });
+  const el = document.getElementById('dashboard-appt-list');
+  const badge = document.getElementById('dash-appt-badge');
+  const title = document.getElementById('dash-appt-title');
+  title.textContent = currentView === 'day' ? "Today's Appointments" : "This Week's Appointments";
+  badge.textContent = filtered.length;
+  el.innerHTML = filtered.length
+    ? filtered.map(apptRowHTML).join('')
+    : `<div class="empty-state">No appointments ${currentView==='day'?'today':'this week'}.</div>`;
+}
+
+// ── Update appointment status (AJAX) ───────────────────────
+async function updateAppt(apptId, status) {
+  try {
+    const res  = await fetch(SERVER.updateApptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ appointment_id: apptId, status })
+    });
+    const data = await res.json();
+    if (!data.success) { showToast(data.message || 'Update failed.', 'error'); return; }
+
+    // update local data
+    const appt = SERVER.appointments.find(a => a.id === apptId);
+    if (appt) appt.status = status;
+
+    // update all DOM badges for this appointment
+    document.querySelectorAll(`#status-${apptId}`).forEach(el => {
+      el.className = `status-pill ${statusCls(status)}`;
+      el.textContent = status;
+    });
+    document.querySelectorAll(`#actions-${apptId}`).forEach(el => el.remove());
+
+    showToast(status === 'completed' ? 'Marked as completed ✓' : 'Appointment cancelled', status === 'completed' ? 'success' : 'info');
+  } catch { showToast('Network error.', 'error'); }
+}
+
+// ── Week grid ───────────────────
+function renderWeekGrid() {
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d       = new Date(todayDate); d.setDate(d.getDate() + i);
+    const dateStr = addDays(i);
+    const isToday = i === 0;
+
+    const slots  = SERVER.availability.filter(s => s.date === dateStr);
+    const booked = SERVER.appointments.filter(a => a.date === dateStr && a.status === 'scheduled');
+
+    let slotsHTML = '';
+    slots.forEach(s => {
+      slotsHTML += `
+        <div class="slot slot-available">
+          ${fmt12(s.start_time)}–${fmt12(s.end_time)}
+          <span class="slot-del" onclick="deleteAvail(${s.id})">✕</span>
+        </div>`;
+    });
+    booked.forEach(a => {
+      slotsHTML += `<div class="slot slot-booked">${fmt12(a.time)} · ${a.patient_name.split(' ')[0]}</div>`;
+    });
+    if (!slotsHTML) slotsHTML = `<div class="slot slot-empty">No slots</div>`;
+    slotsHTML += `<div class="slot slot-add" onclick="prefillAvail('${dateStr}')">+ Add</div>`;
+
+    html += `
+      <div>
+        <div class="day-header">
+          <div class="day-name">${days[d.getDay()]}</div>
+          <div class="day-num ${isToday?'today':''}">${d.getDate()}</div>
+        </div>
+        <div class="day-slots">${slotsHTML}</div>
+      </div>`;
+  }
+  document.getElementById('week-grid').innerHTML = html;
+}
+
+function prefillAvail(date) {
+  document.getElementById('avail-date').value = date;
+  document.getElementById('avail-start').focus();
+}
+
+// ── Add Availability (AJAX) ─────
+async function addAvailability() {
+  const date  = document.getElementById('avail-date').value;
+  const start = document.getElementById('avail-start').value;
+  const end   = document.getElementById('avail-end').value;
+
+  if (!date || !start || !end) { showToast('Please fill all fields.', 'info'); return; }
+  if (start >= end) { showToast('End time must be after start time.', 'info'); return; }
+
+  const btn = document.getElementById('add-avail-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+
+  try {
+    const res  = await fetch(SERVER.addAvailUrl, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ date, start_time: start, end_time: end })
+    });
+    const data = await res.json();
+    if (data.success) {
+      SERVER.availability.push(data.slot);
+      renderWeekGrid();
+      document.getElementById('avail-date').value  = '';
+      document.getElementById('avail-start').value = '';
+      document.getElementById('avail-end').value   = '';
+      showToast('Availability slot added ✓', 'success');
+    } else {
+      showToast(data.message || 'Failed to add slot.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+  finally { btn.disabled = false; btn.textContent = '+ Add Slot'; }
+}
+
+// ── Delete Availability (AJAX) ──
+async function deleteAvail(slotId) {
+  try {
+    const res  = await fetch(SERVER.deleteAvailUrl, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ availability_id: slotId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      SERVER.availability = SERVER.availability.filter(s => s.id !== slotId);
+      renderWeekGrid();
+      showToast('Slot removed.', 'info');
+    } else {
+      showToast(data.message || 'Could not remove slot.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+}
+
+// ── Patient Modal (AJAX for appointments) ──────────────────
+async function openPatientModal(patientId) {
+  const p = SERVER.patients.find(p => p.id === patientId);
+  if (!p) return;
+
+  document.getElementById('modal-patient-name').textContent = p.name;
+  document.getElementById('modal-info-grid').innerHTML = `
+    <div><div class="info-label">Age</div><div class="info-value">${p.age}</div></div>
+    <div><div class="info-label">Gender</div><div class="info-value">${p.gender}</div></div>
+    <div><div class="info-label">Contact</div><div class="info-value">${p.contact_info}</div></div>
+    <div><div class="info-label">Email</div><div class="info-value">${p.email}</div></div>`;
+
+  const apptEl = document.getElementById('modal-appt-list');
+  apptEl.innerHTML = `<div class="empty-state">Loading…</div>`;
+  document.getElementById('patient-modal').classList.add('open');
+
+  try {
+    const res   = await fetch(SERVER.patientApptsBase + patientId + '/appointments');
+    const appts = await res.json();
+    apptEl.innerHTML = appts.length
+      ? appts.map(a => apptRowHTML(a)).join('')
+      : `<div class="empty-state">No appointments found.</div>`;
+  } catch {
+    apptEl.innerHTML = `<div class="empty-state">Could not load appointments.</div>`;
+  }
+}
+
+function closeModal() { document.getElementById('patient-modal').classList.remove('open'); }
+document.getElementById('patient-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── Treatment: patient → load appointments ─────────────────
+function loadPatientAppts() {
+  const pid = document.getElementById('tx-patient').value;
+  const sel = document.getElementById('tx-appointment');
+  sel.innerHTML = '<option value="">— Select appointment —</option>';
+  if (!pid) return;
+  SERVER.appointments
+    .filter(a => a.patient_id == pid && a.status === 'scheduled')
+    .forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = `${a.date} · ${fmt12(a.time)}`;
+      sel.appendChild(opt);
+    });
+}
+
+// ── Save Treatment (AJAX) ───────
+async function saveTreatment() {
+  const apptId    = document.getElementById('tx-appointment').value;
+  const diagnosis = document.getElementById('tx-diagnosis').value.trim();
+  const treatment = document.getElementById('tx-treatment').value.trim();
+  const rx        = document.getElementById('tx-rx').value.trim();
+  const notes     = document.getElementById('tx-notes').value.trim();
+
+  if (!apptId || !diagnosis) { showToast('Appointment and diagnosis are required.', 'info'); return; }
+
+  const btn = document.getElementById('save-tx-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span> Saving…`;
+
+  try {
+    const res  = await fetch(SERVER.saveTreatmentUrl, {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ appointment_id: apptId, diagnosis, treatment, prescription: rx, notes })
+    });
+    const data = await res.json();
+    if (data.success) {
+      prependRecord(data.record);
+      clearTxForm();
+      showToast('Treatment record saved ✓', 'success');
+    } else {
+      showToast(data.message || 'Save failed.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Record'; }
+}
+
+function prependRecord(r) {
+  const empty = document.getElementById('tx-empty');
+  if (empty) empty.remove();
+  const list = document.getElementById('history-list');
+  const div  = document.createElement('div');
+  div.className = 'history-item';
+  div.innerHTML = `
+    <div class="history-date">${r.date} · ${r.patient_name}</div>
+    <div class="history-diagnosis">${r.diagnosis}</div>
+    ${r.treatment    ? `<div class="history-detail" style="margin-top:4px">Treatment: ${r.treatment}</div>`   : ''}
+    ${r.prescription ? `<div class="history-detail">Rx: ${r.prescription}</div>`                              : ''}
+    ${r.notes        ? `<div class="history-detail" style="color:var(--muted);font-size:11px;margin-top:4px">${r.notes}</div>` : ''}`;
+  list.insertBefore(div, list.firstChild);
+  const cnt = document.getElementById('history-count');
+  cnt.textContent = (parseInt(cnt.textContent)||0) + 1 + ' entries';
+}
+
+function clearTxForm() {
+  ['tx-patient','tx-appointment','tx-diagnosis','tx-treatment','tx-rx','tx-notes']
+    .forEach(id => { document.getElementById(id).value = ''; });
+}
+
+// ── Toast ───────────────────────
+function showToast(msg, type='info') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<div class="toast-dot"></div>${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ── Init ────────────────────────
+document.getElementById('avail-date').value = todayStr;
+renderWeekGrid();
+</script>
+</body>
+</html>

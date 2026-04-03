@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwasthBharat -> Patient Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root {
+  --bg:#f5f0eb;--bg2:#ede7df;--white:#fffdf9;
+  --border:rgba(160,130,100,0.15);--border2:rgba(160,130,100,0.25);
+  --primary:#2d6a4f;--primary-light:#52b788;--primary-pale:#d8f3dc;
+  --accent:#e76f51;--accent-pale:#fde8e1;
+  --amber:#e9c46a;--amber-pale:#fdf3d0;
+  --blue:#4895ef;--blue-pale:#dbeafe;
+  --text:#1a1208;--text2:#4a3f30;--muted:#9a8878;
+  --serif:'Playfair Display',Georgia,serif;
+  --sans:'Nunito',system-ui,sans-serif;
+  --radius:18px;--shadow:0 4px 24px rgba(45,106,79,0.08);
+  --shadow-md:0 8px 40px rgba(45,106,79,0.13);
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+body::before{content:'';position:fixed;top:-120px;right:-120px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(82,183,136,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;}
+
+/* SIDEBAR */
+.sidebar{width:260px;min-height:100vh;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;box-shadow:4px 0 30px rgba(45,106,79,0.06);}
+.logo{padding:28px 26px 20px;border-bottom:1px solid var(--border);}
+.logo-mark{font-family:var(--serif);font-size:24px;color:var(--primary);}
+.logo-mark span{color:var(--accent);}
+.logo-sub{font-size:11px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;font-weight:600;}
+.patient-card{margin:16px;background:linear-gradient(135deg,var(--primary),#1b4332);border-radius:16px;padding:18px;color:white;position:relative;overflow:hidden;}
+.patient-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.08);}
+.pat-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:17px;color:white;margin-bottom:10px;}
+.pat-name{font-size:15px;font-weight:700;}
+.pat-id{font-size:11px;opacity:0.7;margin-top:2px;}
+.pat-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.pat-tag{font-size:10px;background:rgba(255,255,255,0.15);padding:3px 8px;border-radius:20px;font-weight:600;}
+.nav{flex:1;padding:8px 12px;}
+.nav-section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:14px 12px 6px;font-weight:700;}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text2);transition:all 0.18s ease;margin-bottom:2px;}
+.nav-item:hover{background:var(--bg);color:var(--primary);}
+.nav-item.active{background:var(--primary-pale);color:var(--primary);}
+.nav-icon{width:20px;height:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sidebar-footer{padding:16px;border-top:1px solid var(--border);}
+.logout-btn{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;padding:10px 12px;border-radius:10px;transition:all 0.15s;text-decoration:none;}
+.logout-btn:hover{background:var(--bg);color:var(--accent);}
+
+/* MAIN */
+.main{margin-left:260px;flex:1;min-height:100vh;display:flex;flex-direction:column;}
+.topbar{padding:20px 36px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(255,253,249,0.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:50;}
+.topbar-title{font-family:var(--serif);font-size:26px;color:var(--text);}
+.topbar-sub{font-size:13px;color:var(--muted);margin-top:2px;font-weight:500;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border2);border-radius:12px;padding:9px 14px;width:210px;}
+.search-box input{background:transparent;border:none;outline:none;font-family:var(--sans);font-size:13px;color:var(--text);width:100%;}
+.search-box input::placeholder{color:var(--muted);}
+
+/* CONTENT */
+.content{padding:32px 36px;flex:1;}
+.panel{display:none;animation:fadeUp 0.28s ease;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* CARD */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.card-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:15px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;}
+.pill-green{background:var(--primary-pale);color:var(--primary);}
+.pill-red{background:var(--accent-pale);color:var(--accent);}
+.pill-amber{background:var(--amber-pale);color:#b5861a;}
+.pill-blue{background:var(--blue-pale);color:var(--blue);}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);transition:transform 0.15s;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.stat-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px;}
+.stat-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;}
+.stat-value{font-family:var(--serif);font-size:34px;line-height:1;margin:4px 0;}
+.stat-sub{font-size:12px;color:var(--muted);font-weight:500;}
+.sc-blue .stat-icon{background:var(--blue-pale);color:var(--blue);}
+.sc-blue .stat-value{color:var(--blue);}
+.sc-green .stat-icon{background:var(--primary-pale);color:var(--primary);}
+.sc-green .stat-value{color:var(--primary);}
+.sc-amber .stat-icon{background:var(--amber-pale);color:#b5861a;}
+.sc-amber .stat-value{color:#b5861a;}
+.sc-red .stat-icon{background:var(--accent-pale);color:var(--accent);}
+.sc-red .stat-value{color:var(--accent);}
+
+/* LAYOUT */
+.two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;}
+.mb{margin-bottom:20px;}
+
+/* DEPT */
+.dept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:18px;}
+.dept-card{border:1.5px solid var(--border);border-radius:16px;padding:18px 14px;text-align:center;cursor:pointer;transition:all 0.18s;background:var(--bg);}
+.dept-card:hover,.dept-card.selected{border-color:var(--primary);background:var(--primary-pale);transform:translateY(-3px);box-shadow:0 8px 24px rgba(45,106,79,0.14);}
+.dept-emoji{font-size:28px;margin-bottom:8px;display:block;}
+.dept-name{font-size:13px;font-weight:700;color:var(--text);}
+.dept-count{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600;}
+
+/* DOCTOR CARD */
+.doctor-list{padding:16px;display:flex;flex-direction:column;gap:12px;}
+.doctor-card{border:1.5px solid var(--border);border-radius:16px;padding:16px;background:var(--bg);transition:all 0.18s;}
+.doctor-card:hover{border-color:var(--primary-light);background:var(--white);box-shadow:0 4px 20px rgba(45,106,79,0.1);}
+.dc-top{display:flex;align-items:flex-start;gap:12px;}
+.dc-avatar{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:19px;font-weight:600;flex-shrink:0;}
+.dc-name{font-size:15px;font-weight:700;}
+.dc-spec{font-size:12px;color:var(--primary);font-weight:600;margin-top:1px;}
+.dc-meta{font-size:12px;color:var(--muted);margin-top:4px;display:flex;gap:12px;flex-wrap:wrap;}
+.dc-avail{margin-top:12px;}
+.avail-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:7px;}
+.avail-chips{display:flex;gap:6px;flex-wrap:wrap;}
+.avail-chip{font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px;background:var(--primary-pale);color:var(--primary);cursor:pointer;transition:all 0.15s;border:1.5px solid transparent;}
+.avail-chip:hover{background:var(--primary);color:white;}
+.dc-actions{display:flex;gap:8px;margin-top:12px;}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;font-family:var(--sans);cursor:pointer;border:none;transition:all 0.15s;}
+.btn-primary{background:var(--primary);color:white;}
+.btn-primary:hover{background:#1b4332;}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-pale);}
+.btn-danger{background:var(--accent-pale);color:var(--accent);border:1.5px solid rgba(231,111,81,0.25);}
+.btn-danger:hover{background:var(--accent);color:white;}
+.btn-sm{padding:6px 12px;font-size:11px;}
+.btn:disabled{opacity:0.6;cursor:not-allowed;}
+
+/* APPOINTMENT ITEM */
+.appt-item{padding:15px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;transition:background 0.15s;}
+.appt-item:last-child{border-bottom:none;}
+.appt-item:hover{background:var(--bg);}
+.appt-date-block{text-align:center;min-width:52px;background:var(--bg);border-radius:12px;padding:8px 6px;border:1px solid var(--border);}
+.appt-day{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.appt-num{font-family:var(--serif);font-size:22px;color:var(--primary);line-height:1;}
+.appt-month{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.appt-info{flex:1;}
+.appt-doc{font-size:14px;font-weight:700;}
+.appt-meta{font-size:12px;color:var(--muted);margin-top:2px;font-weight:500;}
+.status-badge{font-size:11px;padding:4px 12px;border-radius:20px;font-weight:700;white-space:nowrap;}
+.status-scheduled{background:var(--blue-pale);color:var(--blue);}
+.status-completed{background:var(--primary-pale);color:var(--primary);}
+.status-cancelled{background:var(--accent-pale);color:var(--accent);}
+
+/* HISTORY */
+.hist-item{padding:16px 22px;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hist-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.hist-doc{font-size:14px;font-weight:700;}
+.hist-date{font-size:12px;color:var(--muted);font-weight:600;}
+.hist-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;margin-bottom:5px;margin-top:6px;}
+.tag-diagnosis{background:var(--blue-pale);color:var(--blue);}
+.tag-treatment{background:var(--primary-pale);color:var(--primary);}
+.tag-prescription{background:var(--amber-pale);color:#b5861a;}
+.hist-detail{font-size:13px;color:var(--text2);line-height:1.5;}
+
+/* PROFILE */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);}
+.form-input,.form-select,.form-textarea{background:var(--bg);border:1.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;transition:border-color 0.15s;font-weight:500;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--primary);background:var(--white);}
+.form-textarea{resize:vertical;min-height:80px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,18,8,0.5);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:24px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;animation:slideUp 0.25s ease;box-shadow:0 24px 80px rgba(45,106,79,0.2);}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.modal-header{padding:24px 28px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--white);z-index:1;border-radius:24px 24px 0 0;}
+.modal-title{font-family:var(--serif);font-size:22px;color:var(--text);}
+.modal-close{width:34px;height:34px;border-radius:10px;background:var(--bg);border:1px solid var(--border2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);transition:all 0.15s;}
+.modal-close:hover{background:var(--accent-pale);color:var(--accent);}
+.modal-body{padding:22px 28px 28px;}
+.dp-header{display:flex;gap:16px;align-items:center;margin-bottom:20px;}
+.dp-avatar{width:66px;height:66px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:25px;flex-shrink:0;}
+.dp-name{font-family:var(--serif);font-size:20px;}
+.dp-spec{color:var(--primary);font-weight:700;font-size:14px;margin-top:2px;}
+.dp-exp{color:var(--muted);font-size:13px;margin-top:3px;font-weight:500;}
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.ir-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:3px;}
+.ir-value{font-size:14px;font-weight:600;}
+.slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+.slot-btn{padding:10px 8px;border-radius:10px;border:1.5px solid var(--border2);background:var(--bg);font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;text-align:center;transition:all 0.15s;}
+.slot-btn:hover,.slot-btn.selected{border-color:var(--primary);background:var(--primary-pale);color:var(--primary);}
+.slot-date{font-size:11px;color:var(--muted);margin-top:2px;font-weight:500;}
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;box-shadow:0 8px 32px rgba(45,106,79,0.15);animation:toastIn 0.25s ease;color:var(--text);}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+.empty-state{padding:36px 20px;text-align:center;color:var(--muted);font-size:14px;font-weight:600;}
+.es-icon{font-size:34px;margin-bottom:10px;display:block;}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-thumb{background:var(--bg2);border-radius:4px;}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(45,106,79,0.2);border-top-color:var(--primary);border-radius:50%;animation:spin 0.6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+{# ── compute initials once ── #}
+{% set name_parts = patient.name.split() %}
+{% set initials = (name_parts[0][0] + (name_parts[1][0] if name_parts|length > 1 else '')) | upper %}
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark">Swasth<span>Bharat</span></div>
+    <div class="logo-sub">Patient Portal</div>
+  </div>
+
+  <div class="patient-card">
+    <div class="pat-avatar">{{ patient.name }}</div>
+    <div class="pat-name">{{ patient.name }}</div>
+    <div class="pat-id">Patient ID · #P-{{ patient.id }}</div>
+    <div class="pat-meta">
+      <span class="pat-tag">Age {{ patient_profile.age }}</span>
+      <span class="pat-tag">{{ patient_profile.gender }}</span>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section-label">Overview</div>
+    <div class="nav-item active" onclick="showPanel('home')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home
+    </div>
+
+    <div class="nav-section-label">Find Care</div>
+    <div class="nav-item" onclick="showPanel('departments')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>Departments
+    </div>
+    <div class="nav-item" onclick="showPanel('doctors')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Doctors
+    </div>
+
+    <div class="nav-section-label">My Health</div>
+    <div class="nav-item" onclick="showPanel('appointments')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>My Appointments
+    </div>
+    <div class="nav-item" onclick="showPanel('history')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>Health History
+    </div>
+
+    <div class="nav-section-label">Account</div>
+    <div class="nav-item" onclick="showPanel('profile')">
+      <span class="nav-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Edit Profile
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('home') }}" class="logout-btn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out
+    </a>
+  </div>
+</aside>
+
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Welcome back, {{ patient.name }} 🌿</div>
+      <div class="topbar-sub" id="topbar-date"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="search-box">
+        <svg width="14" height="14" fill="none" stroke="var(--muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="Search doctors…" oninput="filterDoctors(this.value)">
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!--  HOME  -->
+    <div class="panel active" id="panel-home">
+      <div class="stats-row">
+        <div class="stat-card sc-blue">
+          <div class="stat-icon">📅</div>
+          <div class="stat-label">Upcoming</div>
+          <div class="stat-value">{{ upcoming_appointments | length }}</div>
+          <div class="stat-sub">Scheduled appointments</div>
+        </div>
+        <div class="stat-card sc-green">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Completed</div>
+          <div class="stat-value">{{ past_appointments | selectattr('status','equalto','completed') | list | length }}</div>
+          <div class="stat-sub">Past visits</div>
+        </div>
+        <div class="stat-card sc-amber">
+          <div class="stat-icon">🩺</div>
+          <div class="stat-label">Treatment Records</div>
+          <div class="stat-value">{{ past_appointments | selectattr('status','equalto','completed') | list | length }}</div>
+          <div class="stat-sub">In your history</div>
+        </div>
+        <div class="stat-card sc-red">
+          <div class="stat-icon">👨‍⚕️</div>
+          <div class="stat-label">Available Doctors</div>
+          <div class="stat-value">{{ all_doctors | length }}</div>
+          <div class="stat-sub">Across all departments</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <!-- Upcoming -->
+          <div class="card mb">
+            <div class="card-header">
+              <div class="card-title">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                Upcoming Appointments
+              </div>
+              <span class="pill pill-blue">{{ upcoming_appointments | length }}</span>
+            </div>
+            {% if upcoming_appointments %}
+              {% for appt in upcoming_appointments %}
+              <div class="appt-item">
+                <div class="appt-date-block">
+                  <div class="appt-day">{{ appt.date.strftime('%a') }}</div>
+                  <div class="appt-num">{{ appt.date.day }}</div>
+                  <div class="appt-month">{{ appt.date.strftime('%b') }}</div>
+                </div>
+                <div class="appt-info">
+                  <div class="appt-doc"> {{ appt.doctor.user.name }}</div>
+                  <div class="appt-meta">{{ appt.doctor.specialization }} · {{ appt.time.strftime('%I:%M %p') }}</div>
+                </div>
+                <span class="status-badge status-{{ appt.status }}">{{ appt.status }}</span>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="empty-state">
+                <span class="es-icon">📅</span>No upcoming appointments.<br>
+                <a href="#" onclick="showPanel('doctors')" style="color:var(--primary);font-weight:700">Browse doctors →</a>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Browse Depts -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">🏥 Browse Departments</div>
+              <span class="pill pill-green" onclick="showPanel('departments')" style="cursor:pointer">View all →</span>
+            </div>
+            <div class="dept-grid">
+              {% for spec in specializations[:6] %}
+              <div class="dept-card" onclick="filterBySpec('{{ spec | e }}')">
+                <!-- <span class="dept-emoji">{{ spec.spec_emoji }}</span> -->
+                <div class="dept-name">{{ spec }}</div>
+                <div class="dept-count">
+                  {{ all_doctors | selectattr('specialization','equalto',spec) | list | length }} doctor(s)
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent History -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Recent History</div>
+            <span class="pill pill-amber">{{ past_appointments | selectattr('status','equalto','completed') | list | length }}</span>
+          </div>
+          {% set completed = past_appointments | selectattr('status','equalto','completed') | list %}
+          {% if completed %}
+            {% for appt in completed[:4] %}
+            <div class="hist-item">
+              <div class="hist-top">
+                <div class="hist-doc"> {{ appt.doctor.user.name }}</div>
+                <div class="hist-date">{{ appt.date.strftime('%d %b') }}</div>
+              </div>
+              <span class="hist-tag tag-diagnosis">{{ appt.doctor.specialization }}</span>
+              <div class="hist-detail">{{ appt.date.strftime('%d %B %Y') }} · {{ appt.time.strftime('%I:%M %p') }}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state"><span class="es-icon">📋</span>No records yet</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+
+    <!--  DEPARTMENTS  -->
+    <div class="panel" id="panel-departments">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🏥 All Departments &amp; Specializations</div>
+          <span class="pill pill-green">{{ specializations | length }} specializations</span>
+        </div>
+        <div class="dept-grid" id="full-dept-grid">
+          {% for spec in specializations %}
+          <div class="dept-card" onclick="filterBySpec('{{ spec | e }}')">
+            <div class="dept-name">{{ spec }}</div>
+            <div class="dept-count">
+              {{ all_doctors | selectattr('specialization','equalto',spec) | list | length }} doctor(s)
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="dept-doctors-section" style="margin-top:20px;display:none">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" id="dept-doctors-title">Doctors</div>
+            <span class="pill pill-green" id="dept-doctors-pill"></span>
+          </div>
+          <div class="doctor-list" id="dept-doctor-list"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!--  DOCTORS  -->
+    <div class="panel" id="panel-doctors">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👨‍⚕️ All Available Doctors</div>
+          <span class="pill pill-blue" id="doc-count-pill">{{ all_doctors | length }} doctors</span>
+        </div>
+        <div class="doctor-list" id="all-doctor-list">
+          {# rendered server-side initially; JS re-renders on search #}
+          {% for doc in all_doctors %}
+          {% set av_idx = (doc.id - 1) % 8 %}
+          {% set av_colors = [('d8f3dc','2d6a4f'),('dbeafe','1d4ed8'),('fde8e1','c2410c'),('fdf3d0','92400e'),('ede9fe','6d28d9'),('fce7f3','9d174d'),('d1fae5','065f46'),('fee2e2','991b1b')] %}
+          {% set av = av_colors[av_idx] %}
+          {% set nm = doc.user.name %}
+          {% set nm_parts = nm.split() %}
+          {% set doc_initials = (nm_parts[0][0] + (nm_parts[1][0] if nm_parts|length > 1 else '')) | upper %}
+          <div class="doctor-card">
+            <div class="dc-top">
+              <!-- <div class="dc-avatar" style="background:#{{ av[0] }};color:#{{ av[1] }}">{{ doc_initials }}</div> -->
+              <div class="dc-info">
+                <div class="dc-name">{{ doc.user.name }}</div>
+                <div class="dc-spec">{{ doc.specialization }}</div>
+                <div class="dc-meta">
+                  <span>🩺 {{ doc.experience }} yrs exp</span>
+                  <span>📋 {{ doc.license }}</span>
+                </div>
+              </div>
+            </div>
+            {% set slots7 = doc.availabilities | selectattr('date', 'ge', today) | list %}
+            {% if slots7 %}
+            <div class="dc-avail">
+              <div class="avail-label">Available slots (next 7 days)</div>
+              <div class="avail-chips">
+                {% for slot in slots7[:4] %}
+                <div class="avail-chip">{{ slot.date.strftime('%d %b') }} {{ slot.start_time.strftime('%I:%M %p') }}</div>
+                {% endfor %}
+              </div>
+            </div>
+            {% else %}
+            <div style="font-size:12px;color:var(--muted);margin-top:10px;font-weight:600">No upcoming slots in the next 7 days</div>
+            {% endif %}
+            <div class="dc-actions">
+              <button class="btn btn-outline" onclick="openDoctorModal({{ doc.id }})">View Profile</button>
+              <button class="btn btn-primary" onclick="openDoctorModal({{ doc.id }})">Book Appointment</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+
+    <!--  APPOINTMENTS  -->
+    <div class="panel" id="panel-appointments">
+      <div class="card mb">
+        <div class="card-header">
+          <div class="card-title">📅 Upcoming Appointments</div>
+          <span class="pill pill-blue" id="appt-upcoming-pill">{{ upcoming_appointments | length }}</span>
+        </div>
+        <div id="appt-upcoming-list">
+          {% if upcoming_appointments %}
+            {% for appt in upcoming_appointments %}
+            <div class="appt-item" id="appt-row-{{ appt.id }}">
+              <div class="appt-date-block">
+                <div class="appt-day">{{ appt.date.strftime('%a') }}</div>
+                <div class="appt-num">{{ appt.date.day }}</div>
+                <div class="appt-month">{{ appt.date.strftime('%b') }}</div>
+              </div>
+              <div class="appt-info">
+                <div class="appt-doc"> {{ appt.doctor.user.name }}</div>
+                <div class="appt-meta">{{ appt.doctor.specialization }} · {{ appt.time.strftime('%I:%M %p') }}</div>
+              </div>
+              <span class="status-badge status-{{ appt.status }}" id="appt-status-{{ appt.id }}">{{ appt.status }}</span>
+              <!-- <button class="btn btn-danger btn-sm" onclick="cancelAppt({{ appt.id }})">Cancel</button> -->
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state" id="upcoming-empty">
+              <span class="es-icon">📅</span>No upcoming appointments.
+              <a href="#" onclick="showPanel('doctors')" style="color:var(--primary)">Book one now →</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🕐 Past Appointments</div>
+          <span class="pill pill-green">{{ past_appointments | length }}</span>
+        </div>
+        {% if past_appointments %}
+          {% for appt in past_appointments %}
+          <div class="appt-item" id="appt-row-{{ appt.id }}">
+            <div class="appt-date-block">
+              <div class="appt-day">{{ appt.date.strftime('%a') }}</div>
+              <div class="appt-num">{{ appt.date.day }}</div>
+              <div class="appt-month">{{ appt.date.strftime('%b') }}</div>
+            </div>
+            <div class="appt-info">
+              <div class="appt-doc"> {{ appt.doctor.user.name }}</div>
+              <div class="appt-meta">{{ appt.doctor.specialization }} · {{ appt.time.strftime('%I:%M %p') }}</div>
+            </div>
+            <span class="status-badge status-{{ appt.status }}">{{ appt.status }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><span class="es-icon">🕐</span>No past appointments</div>
+        {% endif %}
+      </div>
+    </div>
+
+
+    <!--  HISTORY  -->
+    <div class="panel" id="panel-history">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Treatment History &amp; Prescriptions</div>
+          <span class="pill pill-amber">{{ past_appointments | selectattr('status','equalto','completed') | list | length }} records</span>
+        </div>
+        {% set completed = past_appointments | selectattr('status','equalto','completed') | list %}
+        {% if completed %}
+          {% for appt in completed %}
+          <div class="hist-item">
+            <div class="hist-top">
+              <div class="hist-doc"> {{ appt.doctor.user.name }} · {{ appt.doctor.specialization }}</div>
+              <div class="hist-date">{{ appt.date.strftime('%d %b %Y') }}</div>
+            </div>
+            <span class="hist-tag tag-diagnosis">Completed Visit</span>
+            <div class="hist-detail">{{ appt.date.strftime('%A, %d %B %Y') }} at {{ appt.time.strftime('%I:%M %p') }}</div>
+              {% if appt.treatment_record %}
+                <span class="hist-tag tag-treatment" style="margin-top:8px">Treatment</span>
+                <div class="hist-detail">
+                {{ appt.treatment_record.diagnosis }}
+                {% if appt.treatment_record.treatment %}
+                   {{ appt.treatment_record.treatment }}
+                {% endif %}
+                </div>
+                {% if appt.treatment_record.prescription %}
+                  <span class="hist-tag tag-prescription" style="margin-top:8px">Prescription</span>
+                  <div class="hist-detail">{{ appt.treatment_record.prescription }}</div>
+                {% endif %}
+                {% if appt.treatment_record.notes %}
+                  <div class="hist-detail" style="color:var(--muted);font-size:11px;margin-top:4px">
+                  {{ appt.treatment_record.notes }}
+                  </div>
+                {% endif %}
+              {% endif %}
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state"><span class="es-icon">📋</span>No treatment records yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+
+    <!--  PROFILE  -->
+    <div class="panel" id="panel-profile">
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><div class="card-title">👤 Edit My Profile</div></div>
+          <div style="padding:24px">
+            <div class="profile-grid">
+              <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-input" id="pf-name" value="{{ patient.name }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="pf-email" value="{{ patient.email }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" id="pf-phone" value="{{ patient.phone or '' }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Age</label>
+                <input type="number" class="form-input" id="pf-age" value="{{ patient_profile.age }}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select class="form-select" id="pf-gender">
+                  {% for g in ['Male','Female','Other'] %}
+                  <option {% if patient_profile.gender == g %}selected{% endif %}>{{ g }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pincode</label>
+                <input type="text" class="form-input" id="pf-pincode" value="{{ patient.pincode }}">
+              </div>
+              <div class="form-group full">
+                <label class="form-label">Address</label>
+                <input type="text" class="form-input" id="pf-address" value="{{ patient.address }}">
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+              <button class="btn btn-outline" onclick="resetProfile()">Reset</button>
+              <button class="btn btn-primary" id="save-profile-btn" onclick="saveProfile()">Save Changes</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ID Card Preview -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">ID Card Preview</div></div>
+          <div style="padding:22px">
+            <div style="background:linear-gradient(135deg,var(--primary),#1b4332);border-radius:16px;padding:24px;color:white;position:relative;overflow:hidden">
+              <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,0.07)"></div>
+              <div style="font-size:11px;letter-spacing:2px;opacity:0.7;font-weight:700;text-transform:uppercase;margin-bottom:14px">HealthBridge Patient ID</div>
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+                <div style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:20px">{{ initials }}</div>
+                <div>
+                  <div style="font-family:var(--serif);font-size:19px" id="preview-name">{{ patient.name }}</div>
+                  <div style="font-size:12px;opacity:0.7;margin-top:2px">Patient ID · #P-{{ patient.id }}</div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+                <div><div style="opacity:0.6;margin-bottom:2px">Age</div><div style="font-weight:700" id="preview-age">{{ patient_profile.age }}</div></div>
+                <div><div style="opacity:0.6;margin-bottom:2px">Gender</div><div style="font-weight:700" id="preview-gender">{{ patient_profile.gender }}</div></div>
+                <div><div style="opacity:0.6;margin-bottom:2px">Pincode</div><div style="font-weight:700" id="preview-pincode">{{ patient.pincode }}</div></div>
+                <div><div style="opacity:0.6;margin-bottom:2px">Contact</div><div style="font-weight:700" id="preview-phone">{{ patient.phone or '—' }}</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+
+
+<!-- DOCTOR PROFILE + BOOKING MODAL -->
+<div class="modal-overlay" id="doc-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-doc-title">Doctor Profile</div>
+      <div class="modal-close" onclick="closeModal()">✕</div>
+    </div>
+    <div class="modal-body" id="modal-doc-body">
+      <div style="text-align:center;padding:30px"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<script>
+// ── Server-rendered data injected as JSON ─
+const SERVER = {
+  bookUrl:          "{{ url_for('book_appointment') }}",
+  cancelBase:       "/patient/appointment/",
+  availBase:        "/patient/doctor/",
+  doctorsUrl:       "{{ url_for('get_doctors') }}",
+  updateProfileUrl: "{{ url_for('update_patient_profile') }}",
+  csrfToken:        "{{ csrf_token() if csrf_token is defined else '' }}",
+
+  // All doctors as JSON for client-side search & filter
+  allDoctors: {{ all_doctors_json | safe }},
+
+  // Original profile values (for reset)
+  patient: {
+    name:    {{ patient.name    | tojson }},
+    email:   {{ patient.email   | tojson }},
+    phone:   {{ patient.phone  | tojson }},
+    address: {{ patient.address | tojson }},
+    pincode: {{ patient.pincode | tojson }},
+    age:     {{ patient_profile.age    | tojson }},
+    gender:  {{ patient_profile.gender | tojson }},
+  }
+};
+
+// ── Topbar date 
+document.getElementById('topbar-date').textContent =
+  new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+// ── Panel nav 
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.getAttribute('onclick')?.includes(`'${name}'`)) item.classList.add('active');
+  });
+}
+
+// ── Helpers ──
+function fmt12(t) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+}
+function shortDate(str) {
+  const d = new Date(str + 'T00:00:00');
+  return `${d.getDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]}`;
+}
+function dateBlock(str) {
+  const d = new Date(str + 'T00:00:00');
+  return {
+    day:   ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()],
+    num:   d.getDate(),
+    month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]
+  };
+}
+const AV = [
+  ['d8f3dc','2d6a4f'],['dbeafe','1d4ed8'],['fde8e1','c2410c'],['fdf3d0','92400e'],
+  ['ede9fe','6d28d9'],['fce7f3','9d174d'],['d1fae5','065f46'],['fee2e2','991b1b']
+];
+function docInitials(name) {
+  const p = name.replace(/^Dr\.?\s*/i,'').trim().split(/\s+/);
+  return (p[0][0] + (p[1]?p[1][0]:'')).toUpperCase();
+}
+
+// ── Filter by specialization (Dept cards) 
+function filterBySpec(spec) {
+  showPanel('departments');
+  document.querySelectorAll('#full-dept-grid .dept-card').forEach(el => {
+    el.classList.toggle('selected', el.querySelector('.dept-name')?.textContent.trim() === spec);
+  });
+  const docs = SERVER.allDoctors.filter(d => d.specialization === spec);
+  const sec = document.getElementById('dept-doctors-section');
+  sec.style.display = 'block';
+  document.getElementById('dept-doctors-title').textContent = spec + ' Doctors';
+  document.getElementById('dept-doctors-pill').textContent  = docs.length + ' available';
+  document.getElementById('dept-doctor-list').innerHTML = docs.length
+    ? docs.map(doctorCardHTML).join('')
+    : `<div class="empty-state"><span class="es-icon">🔍</span>No doctors found</div>`;
+}
+
+// ── Doctor search 
+function filterDoctors(val) {
+  const q = val.toLowerCase();
+  const filtered = q
+    ? SERVER.allDoctors.filter(d => d.name.toLowerCase().includes(q) || d.specialization.toLowerCase().includes(q))
+    : SERVER.allDoctors;
+  document.getElementById('doc-count-pill').textContent = filtered.length + ' doctors';
+  document.getElementById('all-doctor-list').innerHTML = filtered.length
+    ? filtered.map(doctorCardHTML).join('')
+    : `<div class="empty-state"><span class="es-icon">🔍</span>No doctors match your search</div>`;
+}
+
+// ── Doctor card HTML (client-side) 
+function doctorCardHTML(doc) {
+  const av = AV[(doc.id-1) % AV.length];
+  const chips = doc.availability.slice(0,4).map(s =>
+    `<div class="avail-chip">${shortDate(s.date)} ${fmt12(s.start_time)}</div>`
+  ).join('');
+  return `
+    <div class="doctor-card">
+      <div class="dc-top">
+        <div class="dc-avatar" style="background:#${av[0]};color:#${av[1]}">${docInitials(doc.name)}</div>
+        <div class="dc-info">
+          <div class="dc-name">${doc.name}</div>
+          <div class="dc-spec">${doc.specialization}</div>
+          <div class="dc-meta"><span>🩺 ${doc.experience} yrs</span><span>📋 ${doc.license}</span></div>
+        </div>
+      </div>
+      ${doc.availability.length
+        ? `<div class="dc-avail"><div class="avail-label">Next 7 days</div><div class="avail-chips">${chips}</div></div>`
+        : `<div style="font-size:12px;color:var(--muted);margin-top:10px;font-weight:600">No upcoming slots</div>`}
+      <div class="dc-actions">
+        <button class="btn btn-outline" onclick="openDoctorModal(${doc.id})">View Profile</button>
+        <button class="btn btn-primary" onclick="openDoctorModal(${doc.id},true)">Book Appointment</button>
+      </div>
+    </div>`;
+}
+
+// ── Doctor modal ──
+let _slot = null;
+
+async function openDoctorModal(docId, scrollToBook=false) {
+  _slot = null;
+  const modal = document.getElementById('doc-modal');
+  const body  = document.getElementById('modal-doc-body');
+  const doc   = SERVER.allDoctors.find(d => d.id === docId);
+  if (!doc) return;
+
+  document.getElementById('modal-doc-title').textContent = doc.name;
+  modal.classList.add('open');
+  body.innerHTML = `<div style="text-align:center;padding:30px"><div class="spinner"></div></div>`;
+
+  // Fetch live availability
+  let slots = [];
+  try {
+    const res = await fetch(`${SERVER.availBase}${docId}/availability`);
+    slots = await res.json();
+  } catch { slots = doc.availability; }
+
+  const av = AV[(doc.id-1) % AV.length];
+  const slotHTML = slots.length
+    ? slots.map((s,i) => `
+        <div class="slot-btn" id="sl-${docId}-${i}"
+          onclick="pickSlot(${docId},${i},${s.id},'${s.date}','${s.start_time}','${s.end_time}')">
+          <div>${shortDate(s.date)}</div>
+          <div class="slot-date">${fmt12(s.start_time)} – ${fmt12(s.end_time)}</div>
+        </div>`).join('')
+    : `<div style="color:var(--muted);font-size:13px;font-weight:600;padding:8px 0">No available slots in the next 7 days.</div>`;
+
+  body.innerHTML = `
+    <div class="dp-header">
+      <div class="dp-avatar" style="background:#${av[0]};color:#${av[1]}">${docInitials(doc.name)}</div>
+      <div>
+        <div class="dp-name">${doc.name}</div>
+        <div class="dp-spec">${doc.specialization}</div>
+        <div class="dp-exp">License: ${doc.license} · ${doc.experience} yrs experience</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div><div class="ir-label">Specialization</div><div class="ir-value">${doc.specialization}</div></div>
+      <div><div class="ir-label">Experience</div><div class="ir-value">${doc.experience} years</div></div>
+      <div><div class="ir-label">License</div><div class="ir-value">${doc.license}</div></div>
+      <div><div class="ir-label">Contact</div><div class="ir-value">${doc.contact_info}</div></div>
+    </div>
+    <hr class="divider">
+    <div style="font-size:14px;font-weight:700;margin-bottom:12px" id="book-lbl">📅 Select a Slot to Book</div>
+    <div class="slot-grid">${slotHTML}</div>
+    <div id="confirm-area" style="display:none">
+      <div style="background:var(--primary-pale);border:1.5px solid rgba(45,106,79,0.2);border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px;font-weight:600;color:var(--primary)" id="confirm-text"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="clearSlot(${docId})">Choose Different</button>
+        <button class="btn btn-primary" id="confirm-btn" onclick="confirmBooking(${docId})">Confirm Booking ✓</button>
+      </div>
+    </div>`;
+
+  if (scrollToBook) setTimeout(() => document.getElementById('book-lbl')?.scrollIntoView({behavior:'smooth'}), 200);
+}
+
+function pickSlot(docId, idx, slotId, date, start, end) {
+  _slot = { docId, slotId, date, start, end };
+  document.querySelectorAll('.slot-btn').forEach(el => el.classList.remove('selected'));
+  document.getElementById(`sl-${docId}-${idx}`).classList.add('selected');
+  document.getElementById('confirm-area').style.display = 'block';
+  document.getElementById('confirm-text').textContent =
+    `Booking on ${shortDate(date)}, ${fmt12(start)} – ${fmt12(end)}`;
+}
+
+function clearSlot(docId) {
+  _slot = null;
+  document.querySelectorAll('.slot-btn').forEach(el => el.classList.remove('selected'));
+  document.getElementById('confirm-area').style.display = 'none';
+}
+
+async function confirmBooking(docId) {
+  if (!_slot) return;
+  const btn = document.getElementById('confirm-btn');
+  btn.disabled = true; btn.innerHTML = `<span class="spinner"></span>`;
+
+  try {
+    const res = await fetch(SERVER.bookUrl, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':SERVER.csrfToken},
+      body: JSON.stringify({doctor_id: docId, availability_id: _slot.slotId})
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      showToast(data.message, 'success');
+      insertNewAppt(data.appointment);
+      _slot = null;
+    } else {
+      showToast(data.message || 'Booking failed.', 'error');
+      btn.disabled = false; btn.textContent = 'Confirm Booking ✓';
+    }
+  } catch {
+    showToast('Network error. Try again.', 'error');
+    btn.disabled = false; btn.textContent = 'Confirm Booking ✓';
+  }
+}
+
+function insertNewAppt(a) {
+  const db = dateBlock(a.date);
+  const html = `
+    <div class="appt-item" id="appt-row-${a.id}">
+      <div class="appt-date-block">
+        <div class="appt-day">${db.day}</div>
+        <div class="appt-num">${db.num}</div>
+        <div class="appt-month">${db.month}</div>
+      </div>
+      <div class="appt-info">
+        <div class="appt-doc"> ${a.doctor}</div>
+        <div class="appt-meta">${a.spec} · ${fmt12(a.time)}</div>
+      </div>
+      <span class="status-badge status-scheduled" id="appt-status-${a.id}">scheduled</span>
+      <button class="btn btn-danger btn-sm" onclick="cancelAppt(${a.id})">Cancel</button>
+    </div>`;
+
+  const upcomingEl = document.getElementById('appt-upcoming-list');
+  const emptyEl    = document.getElementById('upcoming-empty');
+  if (emptyEl) emptyEl.remove();
+  upcomingEl.insertAdjacentHTML('afterbegin', html);
+
+  const pill = document.getElementById('appt-upcoming-pill');
+  if (pill) pill.textContent = (parseInt(pill.textContent)||0) + 1;
+}
+
+// ── Cancel appointment ─────────────
+async function cancelAppt(apptId) {
+  if (!confirm('Cancel this appointment?')) return;
+  try {
+    const res = await fetch(`${SERVER.cancelBase}${apptId}/cancel`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': SERVER.csrfToken}
+    });
+    const data = await res.json();
+    if (data.success) {
+      const badge = document.getElementById(`appt-status-${apptId}`);
+      if (badge) { badge.className='status-badge status-cancelled'; badge.textContent='cancelled'; }
+      const row = document.getElementById(`appt-row-${apptId}`);
+      if (row) { const b = row.querySelector('.btn-danger'); if(b) b.remove(); }
+      const pill = document.getElementById('appt-upcoming-pill');
+      if (pill) pill.textContent = Math.max(0,(parseInt(pill.textContent)||1)-1);
+      showToast('Appointment cancelled.', 'info');
+    } else {
+      showToast(data.message||'Could not cancel.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+}
+
+// ── Save profile ──
+async function saveProfile() {
+  const btn = document.getElementById('save-profile-btn');
+  btn.disabled=true; btn.innerHTML=`<span class="spinner"></span> Saving…`;
+  const payload = {
+    name:    document.getElementById('pf-name').value,
+    email:   document.getElementById('pf-email').value,
+    phone:   document.getElementById('pf-phone').value,
+    age:     document.getElementById('pf-age').value,
+    gender:  document.getElementById('pf-gender').value,
+    address: document.getElementById('pf-address').value,
+    pincode: document.getElementById('pf-pincode').value,
+  };
+  try {
+    const res  = await fetch(SERVER.updateProfileUrl, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRFToken':SERVER.csrfToken},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('preview-name').textContent   = payload.name;
+      document.getElementById('preview-age').textContent    = payload.age;
+      document.getElementById('preview-gender').textContent = payload.gender;
+      document.getElementById('preview-phone').textContent  = payload.phone;
+      document.getElementById('preview-pincode').textContent= payload.pincode;
+      showToast('Profile updated ✓', 'success');
+    } else {
+      showToast(data.message||'Update failed.', 'error');
+    }
+  } catch { showToast('Network error.', 'error'); }
+  finally { btn.disabled=false; btn.textContent='Save Changes'; }
+}
+
+function resetProfile() {
+  const p = SERVER.patient;
+  document.getElementById('pf-name').value    = p.name;
+  document.getElementById('pf-email').value   = p.email;
+  document.getElementById('pf-phone').value   = p.phone;
+  document.getElementById('pf-age').value     = p.age;
+  document.getElementById('pf-gender').value  = p.gender;
+  document.getElementById('pf-address').value = p.address;
+  document.getElementById('pf-pincode').value = p.pincode;
+  showToast('Reset to saved values', 'info');
+}
+
+// ── Modal close ───
+function closeModal() { document.getElementById('doc-modal').classList.remove('open'); }
+document.getElementById('doc-modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('doc-modal')) closeModal();
+});
+
+// ── Toast ────
+function showToast(msg, type='info') {
+  const icons={success:'✅',info:'ℹ️',error:'❌'};
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className='toast';
+  t.innerHTML=`<span style="font-size:15px">${icons[type]||'ℹ️'}</span>${msg}`;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(),3400);
+}
+</script>
+</body>
+</html>
